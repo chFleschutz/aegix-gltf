@@ -6,6 +6,7 @@
 #include <variant>
 #include <vector>
 #include <optional>
+#include <filesystem>
 
 namespace Aegix::GLTF
 {
@@ -150,7 +151,6 @@ namespace Aegix::GLTF
 		std::optional<std::string> name;
 	};
 
-
 	struct GLTF
 	{
 		Asset asset;
@@ -162,4 +162,11 @@ namespace Aegix::GLTF
 		std::vector<BufferView> bufferViews;
 		std::vector<Buffer> buffers;
 	};
+
+
+
+	/// @brief Loads a GLTF file from the specified path
+	/// @param path Path to the .gltf file
+	/// @return The parsed GLTF file, or std::nullopt if an error occurred
+	std::optional<GLTF> load(const std::filesystem::path& path);
 }
