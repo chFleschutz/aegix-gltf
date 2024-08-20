@@ -5,6 +5,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <optional>
 
 namespace Aegix::GLTF
 {
@@ -13,7 +14,7 @@ namespace Aegix::GLTF
 	using Quat = std::array<float, 4>;
 	using Mat4 = std::array<float, 16>;
 
-	constexpr Mat4 mat4Identity = {
+	constexpr Mat4 MAT4_IDENTITY = {
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
@@ -22,19 +23,18 @@ namespace Aegix::GLTF
 
 
 
-
 	struct Asset
 	{
 		std::string version;	// Required
-		std::string generator;
-		std::string minVersion;
-		std::string copyright;
+		std::optional<std::string> generator;
+		std::optional<std::string> minVersion;
+		std::optional<std::string> copyright;
 	};
 
 	struct Scene
 	{
-		std::string name;
-		std::vector<uint32_t> nodes;
+		std::vector<size_t> nodes;
+		std::optional<std::string> name;
 	};
 
 	struct Node
@@ -48,38 +48,46 @@ namespace Aegix::GLTF
 
 		using Transform = std::variant<Mat4, TRS>;
 
-		size_t camera;
-		std::vector<uint32_t> children;
-		Transform transform = mat4Identity;
-		uint32_t mesh;
-		std::string name;
-
-	};
-
-	struct Primitive
-	{
-		enum Mode
-		{
-			Points = 0,
-			Lines = 1,
-			LineLoop = 2,
-			LineStrip = 3,
-			Triangles = 4,
-			TriangleStrip = 5,
-			TriangleFan = 6
-		};
-
-		std::map<std::string, uint32_t> attributes;	// Required
-		uint32_t indices;
-		uint32_t material;
-		Mode mode = Triangles;
+		Transform transform = MAT4_IDENTITY;
+		std::vector<size_t> children;
+		std::optional<size_t> camera;
+		std::optional<size_t> skin;
+		std::optional<size_t> mesh;
+		std::optional<std::string> name;
+		//std::vector<float> weights; // TODO: Morph targets
 	};
 
 	struct Mesh
 	{
+		struct Primitive
+		{
+			struct Attribute
+			{
+				std::string semantic;	// Required
+				size_t accessor;		// Required
+			};
+
+			enum Mode
+			{
+				Points = 0,
+				Lines = 1,
+				LineLoop = 2,
+				LineStrip = 3,
+				Triangles = 4,
+				TriangleStrip = 5,
+				TriangleFan = 6
+			};
+
+			std::vector<Attribute> attributes;	// Required
+			std::optional<size_t> indices;
+			std::optional<size_t> material;
+			Mode mode = Triangles;
+			//std::vector<MorphTarget> targets; // TODO: Morph targets
+		};
+
 		std::vector<Primitive> primitives;	// Required
-		std::vector<float> weights;
-		std::string name;
+		//std::vector<float> weights; // TODO: Morph targets
+		std::optional<std::string> name;
 	};
 
 	struct Accessor
@@ -105,16 +113,18 @@ namespace Aegix::GLTF
 			Mat4
 		};
 
-		uint32_t bufferView;
-		uint32_t sparse;
+		std::optional<size_t> bufferView; // Spec: If undefined, accessor must be initialized with zeros
 		size_t byteOffset = 0;
-		size_t count;				// Required
-		ComponentType componentType;// Required
-		Type type;					// Required
+		size_t count;				 // Required
+		ComponentType componentType; // Required
+		Type type;					 // Required
+		bool normalized = false;
+
 		std::vector<float> min;		// Size depends on type [1, 2, 3, 4, 9, 16]
 		std::vector<float> max;		// Size depends on type [1, 2, 3, 4, 9, 16]
-		std::string name;
-		bool normalized = false;
+		//std::optional<size_t> sparse; // TODO: Sparse accessor
+
+		std::optional<std::string> name;
 	};
 
 	struct BufferView
@@ -125,26 +135,26 @@ namespace Aegix::GLTF
 			ElementArrayBuffer = 34963
 		};
 
-		uint32_t buffer;	// Required
-		Target target;
-		size_t byteLength;	// Required
+		size_t buffer;			// Required
+		size_t byteLength;		// Required
 		size_t byteOffset = 0;
-		size_t byteStride;
-		std::string name;
+		std::optional<size_t> byteStride;
+		std::optional<Target> target;
+		std::optional<std::string> name;
 	};
 
 	struct Buffer
 	{
 		size_t byteLength;	// Required
-		std::string uri;
-		std::string name;
+		std::optional<std::string> uri; // Empty for glb
+		std::optional<std::string> name;
 	};
 
 
 	struct GLTF
 	{
 		Asset asset;
-		uint32_t defaultScene;
+		std::optional<size_t> defaultScene;
 		std::vector<Scene> scenes;
 		std::vector<Node> nodes;
 		std::vector<Mesh> meshes;
