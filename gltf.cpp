@@ -66,7 +66,7 @@ namespace Aegix::GLTF
 	static bool readScenes(GLTF& gltf, const nlohmann::json& json)
 	{
 		// scene is optional
-		//tryRead(json, "scene", gltf.defaultScene); 
+		tryReadOptional(json, "scene", gltf.defaultScene); 
 
 		// Spec: "MAY contain zero or more scenes"
 		if (json.contains("scenes") && json["scenes"].is_array())
