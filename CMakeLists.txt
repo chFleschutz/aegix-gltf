@@ -8,5 +8,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(AegixGLTF STATIC)
 
 target_sources(AegixGLTF PRIVATE
-    
+    "gltf.cpp"
 )
