@@ -46,15 +46,36 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	template<typename T, size_t Size>
+	static bool tryReadArray(const nlohmann::json& json, const char* key, std::array<T, Size>& outValue)
+	{
+		auto it = json.find(key);
+		if (it == json.end() || !it->is_array() || it->size() != Size)
+			return false;
+
+		for (size_t i = 0; i < Size; ++i)
+		{
+			outValue[i] = (*it)[i].get<T>();
+		}
+
+		return true;
+	}
+
 	static bool readAsset(GLTF& gltf, const nlohmann::json& json)
 	{
-		if (!json.contains("asset")) // asset is required
+		if (!json.contains("asset"))
+		{
+			assert(false && "GLTF asset is required");
 			return false;
+		}
 		
 		const auto& asset = json["asset"];
 
-		if (!tryRead(asset, "version", gltf.asset.version)) // version is required
+		if (!tryRead(asset, "version", gltf.asset.version))
+		{
+			assert(false && "GLTF asset version is required");
 			return false;
+		}
 
 		tryReadOptional<std::string>(asset, "generator", gltf.asset.generator);
 		tryReadOptional<std::string>(asset, "minVersion", gltf.asset.minVersion);
@@ -84,6 +105,44 @@ namespace Aegix::GLTF
 
 	static bool readNodes(GLTF& gltf, const nlohmann::json& json)
 	{
+		// Spec: "MAY define nodes"
+		auto nodesIt = json.find("nodes");
+		if (nodesIt == json.end() || !nodesIt->is_array())
+			return true;
+
+		for (const auto& jsonNode : *nodesIt)
+		{
+			auto& gltfNode = gltf.nodes.emplace_back();
+
+			Mat4 matrix = MAT4_IDENTITY;
+			bool matrixFound = tryReadArray<float, 16>(jsonNode, "matrix", matrix);
+			Node::TRS trs;
+			bool translationFound = tryReadArray<float, 3>(jsonNode, "translation", trs.translation);
+			bool rotationFound = tryReadArray<float, 4>(jsonNode, "rotation", trs.rotation);
+			bool scaleFound = tryReadArray<float, 3>(jsonNode, "scale", trs.scale);
+
+			if (matrixFound && (translationFound || rotationFound || scaleFound))
+			{
+				assert(false && "Node has both matrix and TRS transform");
+				return false;
+			}
+			
+			if (matrixFound)
+			{
+				gltfNode.transform = matrix;
+			}
+			else
+			{
+				gltfNode.transform = trs;
+			}
+
+			tryReadVector<size_t>(jsonNode, "children", gltfNode.children);
+			tryReadOptional<size_t>(jsonNode, "camera", gltfNode.camera);
+			tryReadOptional<size_t>(jsonNode, "skin", gltfNode.skin);
+			tryReadOptional<size_t>(jsonNode, "mesh", gltfNode.mesh);
+			tryReadOptional<std::string>(jsonNode, "name", gltfNode.name);
+		}
+
 
 		return true;
 	}
