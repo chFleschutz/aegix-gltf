@@ -10,3 +10,7 @@ add_library(AegixGLTF STATIC)
 target_sources(AegixGLTF PRIVATE
     "gltf.cpp"
 )
+
+target_include_directories(AegixGLTF PUBLIC
+	"${CMAKE_CURRENT_SOURCE_DIR}/lib"
+)
