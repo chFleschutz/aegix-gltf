@@ -14,7 +14,7 @@ int main()
 	}
 
 	std::cout << "GLTF file: " << gltfFilePath << "\n\n";
-	std::cout << std::fixed << std::setprecision(2);
+	std::cout << std::fixed << std::setprecision(2) << std::boolalpha;
 
 	// Asset
 	std::cout << "Asset:" << std::endl;
@@ -97,6 +97,33 @@ int main()
 			}
 			std::cout << "\n";
 		}
+	}
+
+	// Accessors
+	std::cout << "Accessors:\n";
+	for (const auto& accessor : gltf->accessors)
+	{
+		std::cout << "\tName:          \t" << accessor.name.value_or("No name") << std::endl;
+		if (accessor.bufferView.has_value())
+			std::cout << "\tBufferView:    \t" << accessor.bufferView.value() << std::endl;
+		std::cout << "\tByteOffset:    \t" << accessor.byteOffset << std::endl;
+		std::cout << "\tNormalized:    \t" << accessor.normalized << std::endl;
+		std::cout << "\tComponentType: \t" << accessor.componentType << std::endl;
+		std::cout << "\tCount:         \t" << accessor.count << std::endl;
+		std::cout << "\tType:          \t" << accessor.type << std::endl;
+		std::cout << "\tMax:           \t[ ";
+		for (const auto& max : accessor.max)
+		{
+			std::cout << max << " ";
+		}
+		std::cout << "]" << std::endl;
+		std::cout << "\tMin:           \t[ ";
+		for (const auto& min : accessor.min)
+		{
+			std::cout << min << " ";
+		}
+		std::cout << "]" << std::endl;
+		std::cout << "\n";
 	}
 
 

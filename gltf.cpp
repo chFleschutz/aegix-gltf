@@ -7,6 +7,9 @@
 
 namespace Aegix::GLTF
 {
+	/// @brief Reads a value from a JSON object by key and stores it in outValue.
+	/// @tparam T Type of the value to read.
+	/// @return Returns false if the key was not found otherwise true.
 	template<typename T>
 	static bool tryRead(const nlohmann::json& json, const char* key, T& outValue)
 	{
@@ -18,6 +21,40 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	/// @brief Reads a value from a JSON object by key and stores it in outValue after casting it to U.
+	/// @tparam T Type of the value to read. This type must be convertible to U by static_cast.
+	/// @tparam U Type of the output value.
+	/// @return Return false if the key was not found otherwise true.
+	template<typename T, typename U>
+	static bool tryReadType(const nlohmann::json& json, const char* key, U& outValue)
+	{
+		auto it = json.find(key);
+		if (it == json.end())
+			return false;
+
+		outValue = static_cast<U>(it->get<T>());
+		return true;
+	}
+
+	/// @brief Reads a value from a JSON object by key and parses it to outValue using the parser function.
+	/// @tparam T Type of the value to read.
+	/// @tparam U Type of the output value.
+	/// @param parser Function that converts T to U.
+	/// @return Return false if the key was not found otherwise true.
+	template<typename T, typename U>
+	static bool tryReadParse(const nlohmann::json& json, const char* key, U& outValue, std::function<U(const T&)> parser)
+	{
+		auto it = json.find(key);
+		if (it == json.end())
+			return false;
+
+		outValue = parser(it->get<T>());
+		return true;
+	}
+
+	/// @brief Reads a value form a JSON object by key and stores it in outValue if it exists.
+	/// @tparam T Type of the value to read.
+	/// @return Return false if the key was not found otherwise true.
 	template<typename T>
 	static bool tryReadOptional(const nlohmann::json& json, const char* key, std::optional<T>& outValue)
 	{
@@ -30,6 +67,9 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	/// @brief Reads a vector from a JSON object by key and stores it in outValue.
+	/// @tparam T Type of the vector elements.
+	/// @return Return false if the key was not found otherwise true.
 	template<typename T>
 	static bool tryReadVector(const nlohmann::json& json, const char* key, std::vector<T>& outValue)
 	{
@@ -46,6 +86,10 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	/// @brief Reads an array from a JSON object by key and stores it in outValue.
+	/// @tparam T Type of the array elements.
+	/// @tparam Size Size of the array.
+	/// @return Return false if the key was not found otherwise true.
 	template<typename T, size_t Size>
 	static bool tryReadArray(const nlohmann::json& json, const char* key, std::array<T, Size>& outValue)
 	{
@@ -60,6 +104,21 @@ namespace Aegix::GLTF
 
 		return true;
 	}
+
+	static Accessor::Type parseAccessorType(const std::string& typeString)
+	{
+		if (typeString == "SCALAR") return Accessor::Type::Scalar;
+		if (typeString == "VEC2") return Accessor::Type::Vec2;
+		if (typeString == "VEC3") return Accessor::Type::Vec3;
+		if (typeString == "VEC4") return Accessor::Type::Vec4;
+		if (typeString == "MAT2") return Accessor::Type::Mat2;
+		if (typeString == "MAT3") return Accessor::Type::Mat3;
+		if (typeString == "MAT4") return Accessor::Type::Mat4;
+		else assert(false && "Invalid accessor type");
+		return Accessor::Type{};
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////
 
 	static bool readAsset(GLTF& gltf, const nlohmann::json& json)
 	{
@@ -208,6 +267,40 @@ namespace Aegix::GLTF
 
 	static bool readAccessors(GLTF& gltf, const nlohmann::json& json)
 	{
+		auto accessorIt = json.find("accessors");
+		if (accessorIt == json.end() || !accessorIt->is_array()) // Accessors are optional -> return no error
+			return true;
+
+		gltf.accessors.reserve(accessorIt->size());
+		for (const auto& jsonAccessor : *accessorIt)
+		{
+			auto& gltfAccessor = gltf.accessors.emplace_back();
+
+			if (!tryRead(jsonAccessor, "count", gltfAccessor.count))
+			{
+				assert(false && "Accessor count is required");
+				return false;
+			}
+
+			if (!tryReadType<int>(jsonAccessor, "componentType", gltfAccessor.componentType))
+			{
+				assert(false && "Accessor componentType is required");
+				return false;
+			}
+
+			if (!tryReadParse<std::string, Accessor::Type>(jsonAccessor, "type", gltfAccessor.type, parseAccessorType))
+			{
+				assert(false && "Accessor type is required");
+				return false;
+			}
+
+			tryReadOptional<size_t>(jsonAccessor, "bufferView", gltfAccessor.bufferView);
+			tryRead(jsonAccessor, "byteOffset", gltfAccessor.byteOffset);
+			tryRead(jsonAccessor, "normalized", gltfAccessor.normalized);
+			tryReadVector<float>(jsonAccessor, "min", gltfAccessor.min);
+			tryReadVector<float>(jsonAccessor, "max", gltfAccessor.max);
+			tryReadOptional<std::string>(jsonAccessor, "name", gltfAccessor.name);
+		}
 
 		return true;
 	}
