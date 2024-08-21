@@ -2,8 +2,11 @@
 
 #include "json/json.hpp"
 
+#include <cassert>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <type_traits>
 
 namespace Aegix::GLTF
 {
@@ -64,6 +67,23 @@ namespace Aegix::GLTF
 			return false;
 
 		outValue = it->get<T>();
+		return true;
+	}
+
+	/// @brief Reads a value form a JSON object by key and stores it in outValue after casting it to U.
+	/// @tparam T Type of the value to read. This type must be convertible to U by static_cast.
+	/// @tparam U Type of the output value.
+	/// @return Return false if the key was not found otherwise true.
+	template<typename T, typename U>
+	static bool tryReadOptionalType(const nlohmann::json& json, const char* key, std::optional<U>& outValue)
+	{
+		outValue = std::nullopt;
+		auto it = json.find(key);
+		if (it == json.end())
+			return false;
+
+		auto valueU = static_cast<U>(it->get<T>());
+		outValue = valueU;
 		return true;
 	}
 
@@ -307,6 +327,32 @@ namespace Aegix::GLTF
 
 	static bool readBufferViews(GLTF& gltf, const nlohmann::json& json)
 	{
+		auto bufferViewIt = json.find("bufferViews");
+		if (bufferViewIt == json.end() || !bufferViewIt->is_array()) // BufferViews are optional -> return no error
+			return true;
+
+		gltf.bufferViews.reserve(bufferViewIt->size());
+		for (const auto& jsonBufferView : *bufferViewIt)
+		{
+			auto& gltfBufferView = gltf.bufferViews.emplace_back();
+
+			if (!tryRead(jsonBufferView, "buffer", gltfBufferView.buffer))
+			{
+				assert(false && "BufferView buffer is required");
+				return false;
+			}
+
+			if (!tryRead(jsonBufferView, "byteLength", gltfBufferView.byteLength))
+			{
+				assert(false && "BufferView byteLength is required");
+				return false;
+			}
+
+			tryRead(jsonBufferView, "byteOffset", gltfBufferView.byteOffset);
+			tryReadOptional<size_t>(jsonBufferView, "byteStride", gltfBufferView.byteStride);
+			tryReadOptionalType<int>(jsonBufferView, "target", gltfBufferView.target);
+			tryReadOptional<std::string>(jsonBufferView, "name", gltfBufferView.name);
+		}
 
 		return true;
 	}

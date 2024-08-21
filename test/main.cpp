@@ -42,7 +42,7 @@ int main()
 	std::cout << "Nodes:" << std::endl;
 	for (const auto& node : gltf->nodes)
 	{
-		std::cout << "\tName: \t" << node.name.value_or("No name") << std::endl;
+		std::cout << "\tName: \t" << node.name.value_or("None") << std::endl;
 		std::cout << "\tChildren: \t[ ";
 		for (const auto& childIndex : node.children)
 		{
@@ -81,7 +81,7 @@ int main()
 	std::cout << "Meshes:\n";
 	for (const auto& mesh : gltf->meshes)
 	{
-		std::cout << "\tName: \t" << mesh.name.value_or("No name") << std::endl;
+		std::cout << "\tName: \t" << mesh.name.value_or("None") << std::endl;
 		std::cout << "\tPrimitives:\n";
 		for (const auto& primitive : mesh.primitives)
 		{
@@ -103,7 +103,7 @@ int main()
 	std::cout << "Accessors:\n";
 	for (const auto& accessor : gltf->accessors)
 	{
-		std::cout << "\tName:          \t" << accessor.name.value_or("No name") << std::endl;
+		std::cout << "\tName:          \t" << accessor.name.value_or("None") << std::endl;
 		if (accessor.bufferView.has_value())
 			std::cout << "\tBufferView:    \t" << accessor.bufferView.value() << std::endl;
 		std::cout << "\tByteOffset:    \t" << accessor.byteOffset << std::endl;
@@ -123,6 +123,21 @@ int main()
 			std::cout << min << " ";
 		}
 		std::cout << "]" << std::endl;
+		std::cout << "\n";
+	}
+
+	// Buffer Views
+	std::cout << "Buffer Views:\n";
+	for (const auto& bufferView : gltf->bufferViews)
+	{
+		std::cout << "\tName:          \t" << bufferView.name.value_or("None") << std::endl;
+		std::cout << "\tBuffer:        \t" << bufferView.buffer << std::endl;
+		std::cout << "\tByteOffset:    \t" << bufferView.byteOffset << std::endl;
+		std::cout << "\tByteLength:    \t" << bufferView.byteLength << std::endl;
+		if (bufferView.byteStride.has_value())
+			std::cout << "\tByteStride:    \t" << bufferView.byteStride.value() << std::endl;
+		if (bufferView.target.has_value())
+			std::cout << "\tTarget:        \t" << bufferView.target.value() << std::endl;
 		std::cout << "\n";
 	}
 
