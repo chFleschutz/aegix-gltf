@@ -143,12 +143,65 @@ namespace Aegix::GLTF
 			tryReadOptional<std::string>(jsonNode, "name", gltfNode.name);
 		}
 
+		return true;
+	}
+
+	static bool readAttributes(std::vector<Mesh::Primitive::Attribute>& attributes, const nlohmann::json& json)
+	{
+		auto attributesIt = json.find("attributes");
+		if (attributesIt == json.end()) // Attributes are required -> return error
+			return false;
+
+		attributes.reserve(attributesIt->size());
+		for (const auto& [key, value] : attributesIt->items())
+		{
+			auto& attribute = attributes.emplace_back();
+			attribute.semantic = key;
+			attribute.accessor = value.get<size_t>();
+		}
 
 		return true;
 	}
 
+	static bool readPrimitives(std::vector<Mesh::Primitive>& primitives, const nlohmann::json& json)
+	{
+		auto primitivesIt = json.find("primitives");
+		if (primitivesIt == json.end() || !primitivesIt->is_array()) // Primitives are required -> return error
+			return false;
+
+		primitives.reserve(primitivesIt->size());
+		for (const auto& jsonPrimitive : *primitivesIt)
+		{
+			auto& gltfPrimitive = primitives.emplace_back();
+
+			if (!readAttributes(gltfPrimitive.attributes, jsonPrimitive))
+				return false;
+			
+			tryReadOptional<size_t>(jsonPrimitive, "indices", gltfPrimitive.indices);
+			tryReadOptional<size_t>(jsonPrimitive, "material", gltfPrimitive.material);
+
+			auto mode = static_cast<int>(gltfPrimitive.mode); // Default value
+			if (tryRead<int>(jsonPrimitive, "mode", mode))
+				gltfPrimitive.mode = static_cast<Mesh::Primitive::Mode>(mode);
+		}
+	}
+
 	static bool readMeshes(GLTF& gltf, const nlohmann::json& json)
 	{
+		auto meshIt = json.find("meshes");
+		if (meshIt == json.end() || !meshIt->is_array()) // Meshes are optional -> return no error
+			return true; 
+
+		gltf.meshes.reserve(meshIt->size());
+		for (const auto& jsonMesh : *meshIt)
+		{
+			auto& gltfMesh = gltf.meshes.emplace_back();
+			tryReadOptional<std::string>(jsonMesh, "name", gltfMesh.name);
+			tryReadVector<float>(jsonMesh, "weights", gltfMesh.weights);
+
+			if (!readPrimitives(gltfMesh.primitives, jsonMesh))
+				return false;
+		}
 
 		return true;
 	}

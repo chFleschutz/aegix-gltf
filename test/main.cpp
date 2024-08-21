@@ -75,9 +75,30 @@ int main()
 			}
 			}, node.transform);
 		std::cout << "\n";
-
-
 	}
+
+	// Meshes
+	std::cout << "Meshes:\n";
+	for (const auto& mesh : gltf->meshes)
+	{
+		std::cout << "\tName: \t" << mesh.name.value_or("No name") << std::endl;
+		std::cout << "\tPrimitives:\n";
+		for (const auto& primitive : mesh.primitives)
+		{
+			if (primitive.indices.has_value())
+				std::cout << "\t\tIndices: \t" << primitive.indices.value() << std::endl;
+			if (primitive.material.has_value())
+				std::cout << "\t\tMaterial: \t" << primitive.material.value() << std::endl;
+			std::cout << "\t\tMode:     \t" << primitive.mode << std::endl;
+			std::cout << "\t\tAttributes:\n";
+			for (const auto& [semantic, accessorIndex] : primitive.attributes)
+			{
+				std::cout << "\t\t\t" << semantic << ": \t" << accessorIndex << std::endl;
+			}
+			std::cout << "\n";
+		}
+	}
+
 
 	return 0;
 }

@@ -87,7 +87,7 @@ namespace Aegix::GLTF
 		};
 
 		std::vector<Primitive> primitives;	// Required
-		//std::vector<float> weights; // TODO: Morph targets
+		std::vector<float> weights; 
 		std::optional<std::string> name;
 	};
 
