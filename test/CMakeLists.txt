@@ -1,6 +1,8 @@
 
-add_executable(AegixGLTFTest "main.cpp")
+project(aegix-gltf-testing)
 
-target_link_libraries(AegixGLTFTest AegixGLTF)
+add_executable(${PROJECT_NAME} "main.cpp")
+
+target_link_libraries(${PROJECT_NAME} Aegix::GLTF)
 
 add_definitions(-DPROJECT_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
