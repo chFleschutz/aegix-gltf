@@ -140,58 +140,61 @@ namespace Aegix::GLTF
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	static bool readAsset(GLTF& gltf, const nlohmann::json& json)
+	static bool readAsset(Asset& asset, const nlohmann::json& json)
 	{
-		if (!json.contains("asset"))
+		auto assetIt = json.find("asset");
+		if (assetIt == json.end()) // Asset is required -> return error
 		{
 			assert(false && "GLTF asset is required");
 			return false;
 		}
-		
-		const auto& asset = json["asset"];
 
-		if (!tryRead(asset, "version", gltf.asset.version))
+		if (!tryRead(*assetIt, "version", asset.version))
 		{
 			assert(false && "GLTF asset version is required");
 			return false;
 		}
 
-		tryReadOptional<std::string>(asset, "generator", gltf.asset.generator);
-		tryReadOptional<std::string>(asset, "minVersion", gltf.asset.minVersion);
-		tryReadOptional<std::string>(asset, "copyright", gltf.asset.copyright);
+		tryReadOptional<std::string>(*assetIt, "generator", asset.generator);
+		tryReadOptional<std::string>(*assetIt, "minVersion", asset.minVersion);
+		tryReadOptional<std::string>(*assetIt, "copyright", asset.copyright);
 
 		return true;
 	}
 
-	static bool readScenes(GLTF& gltf, const nlohmann::json& json)
+	static bool readStartScene(std::optional<size_t>& defaultScene, const nlohmann::json& json)
 	{
-		// scene is optional
-		tryReadOptional(json, "scene", gltf.defaultScene); 
+		tryReadOptional(json, "scene", defaultScene);
+		return true;
+	}
 
-		// Spec: "MAY contain zero or more scenes"
-		if (json.contains("scenes") && json["scenes"].is_array())
+	static bool readScenes(std::vector<Scene>& scenes, const nlohmann::json& json)
+	{
+		auto scenesIt = json.find("scenes");
+		if (scenesIt == json.end() || !scenesIt->is_array()) // Scenes are optional -> return no error
+			return true;
+
+		scenes.reserve(scenesIt->size());
+		for (const auto& jsonScene : *scenesIt)
 		{
-			for (const auto& jsonScene : json["scenes"])
-			{
-				auto& gltfScene = gltf.scenes.emplace_back();
-				tryReadOptional<std::string>(jsonScene, "name", gltfScene.name);
-				tryReadVector<size_t>(jsonScene, "nodes", gltfScene.nodes);
-			}
+			auto& gltfScene = scenes.emplace_back();
+			tryReadOptional<std::string>(jsonScene, "name", gltfScene.name);
+			tryReadVector<size_t>(jsonScene, "nodes", gltfScene.nodes);
 		}
 
 		return true;
 	}
 
-	static bool readNodes(GLTF& gltf, const nlohmann::json& json)
+	static bool readNodes(std::vector<Node>& nodes, const nlohmann::json& json)
 	{
-		// Spec: "MAY define nodes"
 		auto nodesIt = json.find("nodes");
-		if (nodesIt == json.end() || !nodesIt->is_array())
+		if (nodesIt == json.end() || !nodesIt->is_array()) // Nodes are optional -> return no error
 			return true;
 
+		nodes.reserve(nodesIt->size());
 		for (const auto& jsonNode : *nodesIt)
 		{
-			auto& gltfNode = gltf.nodes.emplace_back();
+			auto& gltfNode = nodes.emplace_back();
 
 			Mat4 matrix = MAT4_IDENTITY;
 			bool matrixFound = tryReadArray<float, 16>(jsonNode, "matrix", matrix);
@@ -265,16 +268,16 @@ namespace Aegix::GLTF
 		}
 	}
 
-	static bool readMeshes(GLTF& gltf, const nlohmann::json& json)
+	static bool readMeshes(std::vector<Mesh>& meshes, const nlohmann::json& json)
 	{
 		auto meshIt = json.find("meshes");
 		if (meshIt == json.end() || !meshIt->is_array()) // Meshes are optional -> return no error
 			return true; 
 
-		gltf.meshes.reserve(meshIt->size());
+		meshes.reserve(meshIt->size());
 		for (const auto& jsonMesh : *meshIt)
 		{
-			auto& gltfMesh = gltf.meshes.emplace_back();
+			auto& gltfMesh = meshes.emplace_back();
 			tryReadOptional<std::string>(jsonMesh, "name", gltfMesh.name);
 			tryReadVector<float>(jsonMesh, "weights", gltfMesh.weights);
 
@@ -285,16 +288,16 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static bool readAccessors(GLTF& gltf, const nlohmann::json& json)
+	static bool readAccessors(std::vector<Accessor>& accessors, const nlohmann::json& json)
 	{
 		auto accessorIt = json.find("accessors");
 		if (accessorIt == json.end() || !accessorIt->is_array()) // Accessors are optional -> return no error
 			return true;
 
-		gltf.accessors.reserve(accessorIt->size());
+		accessors.reserve(accessorIt->size());
 		for (const auto& jsonAccessor : *accessorIt)
 		{
-			auto& gltfAccessor = gltf.accessors.emplace_back();
+			auto& gltfAccessor = accessors.emplace_back();
 
 			if (!tryRead(jsonAccessor, "count", gltfAccessor.count))
 			{
@@ -325,16 +328,16 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static bool readBufferViews(GLTF& gltf, const nlohmann::json& json)
+	static bool readBufferViews(std::vector<BufferView>& bufferViews, const nlohmann::json& json)
 	{
 		auto bufferViewIt = json.find("bufferViews");
 		if (bufferViewIt == json.end() || !bufferViewIt->is_array()) // BufferViews are optional -> return no error
 			return true;
 
-		gltf.bufferViews.reserve(bufferViewIt->size());
+		bufferViews.reserve(bufferViewIt->size());
 		for (const auto& jsonBufferView : *bufferViewIt)
 		{
-			auto& gltfBufferView = gltf.bufferViews.emplace_back();
+			auto& gltfBufferView = bufferViews.emplace_back();
 
 			if (!tryRead(jsonBufferView, "buffer", gltfBufferView.buffer))
 			{
@@ -357,16 +360,16 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static bool readBuffers(GLTF& gltf, const nlohmann::json& json)
+	static bool readBuffers(std::vector<Buffer>& buffers, const nlohmann::json& json)
 	{
 		auto bufferIt = json.find("buffers");
 		if (bufferIt == json.end() || !bufferIt->is_array()) // Buffers are optional -> return no error
 			return true;
 
-		gltf.buffers.reserve(bufferIt->size());
+		buffers.reserve(bufferIt->size());
 		for (const auto& jsonBuffer : *bufferIt)
 		{
-			auto& gltfBuffer = gltf.buffers.emplace_back();
+			auto& gltfBuffer = buffers.emplace_back();
 
 			if (!tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength))
 			{
@@ -391,13 +394,14 @@ namespace Aegix::GLTF
 		file.close();
 
 		GLTF gltf;
-		if (!readAsset(gltf, jsonData) ||
-			!readScenes(gltf, jsonData) ||
-			!readNodes(gltf, jsonData) ||
-			!readMeshes(gltf, jsonData) ||
-			!readAccessors(gltf, jsonData) ||
-			!readBufferViews(gltf, jsonData) ||
-			!readBuffers(gltf, jsonData))
+		if (!readAsset(gltf.asset, jsonData) ||
+			!readStartScene(gltf.startScene, jsonData) ||
+			!readScenes(gltf.scenes, jsonData) ||
+			!readNodes(gltf.nodes, jsonData) ||
+			!readMeshes(gltf.meshes, jsonData) ||
+			!readAccessors(gltf.accessors, jsonData) ||
+			!readBufferViews(gltf.bufferViews, jsonData) ||
+			!readBuffers(gltf.buffers, jsonData))
 		{
 			return std::nullopt;
 		}

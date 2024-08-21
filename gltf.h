@@ -22,7 +22,7 @@ namespace Aegix::GLTF
 		0.0f, 0.0f, 1.0f, 0.0f,
 	};
 
-
+	
 
 	struct Asset
 	{
@@ -154,7 +154,7 @@ namespace Aegix::GLTF
 	struct GLTF
 	{
 		Asset asset;
-		std::optional<size_t> defaultScene;
+		std::optional<size_t> startScene;
 		std::vector<Scene> scenes;
 		std::vector<Node> nodes;
 		std::vector<Mesh> meshes;

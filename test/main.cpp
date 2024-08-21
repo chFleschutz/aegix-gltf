@@ -24,8 +24,8 @@ int main()
 	std::cout << "\tCopyright: \t" << gltf->asset.copyright.value_or("No copyright") << "\n\n";
 
 	// Scenes
-	if (gltf->defaultScene.has_value())
-		std::cout << "Default Scene: \t" << gltf->defaultScene.value() << std::endl;
+	if (gltf->startScene.has_value())
+		std::cout << "Start Scene: \t" << gltf->startScene.value() << std::endl;
 	std::cout << "Scenes:" << std::endl;
 	for (const auto& scene : gltf->scenes)
 	{
