@@ -141,6 +141,16 @@ int main()
 		std::cout << "\n";
 	}
 
+	// Buffers
+	std::cout << "Buffers:\n";
+	for (const auto& buffer : gltf->buffers)
+	{
+		std::cout << "\tName:          \t" << buffer.name.value_or("None") << std::endl;
+		std::cout << "\tByteLength:    \t" << buffer.byteLength << std::endl;
+		if (buffer.uri.has_value())
+			std::cout << "\tURI:           \t" << buffer.uri.value() << std::endl;
+		std::cout << "\n";
+	}
 
 	return 0;
 }

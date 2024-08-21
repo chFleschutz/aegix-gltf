@@ -359,6 +359,24 @@ namespace Aegix::GLTF
 
 	static bool readBuffers(GLTF& gltf, const nlohmann::json& json)
 	{
+		auto bufferIt = json.find("buffers");
+		if (bufferIt == json.end() || !bufferIt->is_array()) // Buffers are optional -> return no error
+			return true;
+
+		gltf.buffers.reserve(bufferIt->size());
+		for (const auto& jsonBuffer : *bufferIt)
+		{
+			auto& gltfBuffer = gltf.buffers.emplace_back();
+
+			if (!tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength))
+			{
+				assert(false && "Buffer byteLength is required");
+				return false;
+			}
+
+			tryReadOptional<std::string>(jsonBuffer, "uri", gltfBuffer.uri);
+			tryReadOptional<std::string>(jsonBuffer, "name", gltfBuffer.name);
+		}
 
 		return true;
 	}
