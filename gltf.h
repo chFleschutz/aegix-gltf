@@ -68,7 +68,7 @@ namespace Aegix::GLTF
 				size_t accessor;		// Required
 			};
 
-			enum Mode
+			enum class Mode
 			{
 				Points = 0,
 				Lines = 1,
@@ -82,7 +82,7 @@ namespace Aegix::GLTF
 			std::vector<Attribute> attributes;	// Required
 			std::optional<size_t> indices;
 			std::optional<size_t> material;
-			Mode mode = Triangles;
+			Mode mode = Mode::Triangles;
 			//std::vector<MorphTarget> targets; // TODO: Morph targets
 		};
 
@@ -93,7 +93,7 @@ namespace Aegix::GLTF
 
 	struct Accessor
 	{
-		enum ComponentType
+		enum class ComponentType
 		{
 			Byte = 5120,
 			UnsignedByte = 5121,
@@ -103,7 +103,7 @@ namespace Aegix::GLTF
 			Float = 5126
 		};
 
-		enum Type
+		enum class Type
 		{
 			Scalar,
 			Vec2,
@@ -130,7 +130,7 @@ namespace Aegix::GLTF
 
 	struct BufferView
 	{
-		enum Target
+		enum class Target
 		{
 			ArrayBuffer = 34962,
 			ElementArrayBuffer = 34963
@@ -182,7 +182,7 @@ namespace Aegix::GLTF
 			float roughnessFactor = 1.0f;
 		};
 
-		enum AlphaMode
+		enum class AlphaMode
 		{
 			Opaque,
 			Mask,
@@ -196,7 +196,7 @@ namespace Aegix::GLTF
 		std::optional<OcclusionTextureInfo> occlusionTexture;
 		std::optional<TextureInfo> emissiveTexture;
 		Vec3 emissiveFactor{ 0.0f, 0.0f, 0.0f };
-		AlphaMode alphaMode = Opaque;
+		AlphaMode alphaMode = AlphaMode::Opaque;
 		float alphaCutoff = 0.5f;
 		bool doubleSided = false;
 	};
@@ -245,7 +245,7 @@ namespace Aegix::GLTF
 			LinearMipmapLinear = 9987
 		};
 
-		enum WrapMode
+		enum class WrapMode
 		{
 			ClampToEdge = 33071,
 			MirroredRepeat = 33648,
@@ -254,8 +254,8 @@ namespace Aegix::GLTF
 
 		std::optional<MagFilter> magFilter;
 		std::optional<MinFilter> minFilter;
-		WrapMode wrapS = Repeat;
-		WrapMode wrapT = Repeat;
+		WrapMode wrapS = WrapMode::Repeat;
+		WrapMode wrapT = WrapMode::Repeat;
 		std::optional<std::string> name;
 	};
 

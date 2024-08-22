@@ -89,7 +89,7 @@ int main()
 				std::cout << "\t\tIndices: \t" << primitive.indices.value() << std::endl;
 			if (primitive.material.has_value())
 				std::cout << "\t\tMaterial: \t" << primitive.material.value() << std::endl;
-			std::cout << "\t\tMode:     \t" << primitive.mode << std::endl;
+			std::cout << "\t\tMode:     \t" << static_cast<int>(primitive.mode) << std::endl;
 			std::cout << "\t\tAttributes:\n";
 			for (const auto& [semantic, accessorIndex] : primitive.attributes)
 			{
@@ -108,9 +108,9 @@ int main()
 			std::cout << "\tBufferView:    \t" << accessor.bufferView.value() << std::endl;
 		std::cout << "\tByteOffset:    \t" << accessor.byteOffset << std::endl;
 		std::cout << "\tNormalized:    \t" << accessor.normalized << std::endl;
-		std::cout << "\tComponentType: \t" << accessor.componentType << std::endl;
+		std::cout << "\tComponentType: \t" << static_cast<int>(accessor.componentType) << std::endl;
 		std::cout << "\tCount:         \t" << accessor.count << std::endl;
-		std::cout << "\tType:          \t" << accessor.type << std::endl;
+		std::cout << "\tType:          \t" << static_cast<int>(accessor.type) << std::endl;
 		std::cout << "\tMax:           \t[ ";
 		for (const auto& max : accessor.max)
 		{
@@ -137,7 +137,7 @@ int main()
 		if (bufferView.byteStride.has_value())
 			std::cout << "\tByteStride:    \t" << bufferView.byteStride.value() << std::endl;
 		if (bufferView.target.has_value())
-			std::cout << "\tTarget:        \t" << bufferView.target.value() << std::endl;
+			std::cout << "\tTarget:        \t" << static_cast<int>(bufferView.target.value()) << std::endl;
 		std::cout << "\n";
 	}
 
@@ -157,7 +157,7 @@ int main()
 	for (const auto& material : gltf->materials)
 	{
 		std::cout << "\tName:          \t" << material.name.value_or("None") << std::endl;
-		std::cout << "\tAlphaMode:     \t" << material.alphaMode << std::endl;
+		std::cout << "\tAlphaMode:     \t" << static_cast<int>(material.alphaMode) << std::endl;
 		std::cout << "\tAlphaCutoff:   \t" << material.alphaCutoff << std::endl;
 		std::cout << "\tDoubleSided:   \t" << material.doubleSided << std::endl;
 		std::cout << "\tEmissiveFactor:\t[ " << material.emissiveFactor[0] << " " << material.emissiveFactor[1] << " " << material.emissiveFactor[2] << " ]" << std::endl;
@@ -236,8 +236,8 @@ int main()
 			std::cout << "\tMagFilter:     \t" << static_cast<int>(sampler.magFilter.value()) << std::endl;
 		if (sampler.minFilter.has_value())
 			std::cout << "\tMinFilter:     \t" << static_cast<int>(sampler.minFilter.value()) << std::endl;
-		std::cout << "\tWrapS:         \t" << sampler.wrapS << std::endl;
-		std::cout << "\tWrapT:         \t" << sampler.wrapT << std::endl;
+		std::cout << "\tWrapS:         \t" << static_cast<int>(sampler.wrapS) << std::endl;
+		std::cout << "\tWrapT:         \t" << static_cast<int>(sampler.wrapT) << std::endl;
 		std::cout << "\n";
 	}
 
