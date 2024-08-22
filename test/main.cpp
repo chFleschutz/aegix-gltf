@@ -5,7 +5,7 @@
 
 int main()
 {
-	std::filesystem::path gltfFilePath = PROJECT_DIR "/cube.gltf";
+	std::filesystem::path gltfFilePath = PROJECT_DIR "/DamagedHelmet.gltf";
 	auto gltf = Aegix::GLTF::load(gltfFilePath);
 	if (!gltf)
 	{
@@ -151,6 +151,49 @@ int main()
 			std::cout << "\tURI:           \t" << buffer.uri.value() << std::endl;
 		std::cout << "\n";
 	}
+
+	// Materials
+	std::cout << "Materials:\n";
+	for (const auto& material : gltf->materials)
+	{
+		std::cout << "\tName:          \t" << material.name.value_or("None") << std::endl;
+		std::cout << "\tAlphaMode:     \t" << material.alphaMode << std::endl;
+		std::cout << "\tAlphaCutoff:   \t" << material.alphaCutoff << std::endl;
+		std::cout << "\tDoubleSided:   \t" << material.doubleSided << std::endl;
+		std::cout << "\tEmissiveFactor:\t[ " << material.emissiveFactor[0] << " " << material.emissiveFactor[1] << " " << material.emissiveFactor[2] << " ]" << std::endl;
+		if (material.pbrMetallicRoughness.has_value())
+		{
+			std::cout << "\tPBRMetallicRoughness:\n";
+			std::cout << "\t\tBaseColorFactor:         \t[ " << material.pbrMetallicRoughness->baseColorFactor[0] << " " << material.pbrMetallicRoughness->baseColorFactor[1] << " " << material.pbrMetallicRoughness->baseColorFactor[2] << " " << material.pbrMetallicRoughness->baseColorFactor[3] << " ]" << std::endl;
+			std::cout << "\t\tMetallicFactor:          \t" << material.pbrMetallicRoughness->metallicFactor << std::endl;
+			std::cout << "\t\tRoughnessFactor:         \t" << material.pbrMetallicRoughness->roughnessFactor << std::endl;
+			if (material.pbrMetallicRoughness->baseColorTexture.has_value())
+			std::cout << "\t\tBaseColorTexture:        \t" << material.pbrMetallicRoughness->baseColorTexture->index << std::endl;
+			if (material.pbrMetallicRoughness->metallicRoughnessTexture.has_value())
+			std::cout << "\t\tMetallicRoughnessTexture:\t" << material.pbrMetallicRoughness->metallicRoughnessTexture->index << std::endl;
+		}
+		if (material.normalTexture.has_value())
+		{
+			std::cout << "\tNormalTexture: \n";
+			std::cout << "\t\tIndex:    \t" << material.normalTexture->index << std::endl;
+			std::cout << "\t\tTexCoord: \t" << material.normalTexture->texCoord << std::endl;
+			std::cout << "\t\tScale:    \t" << material.normalTexture->scale << std::endl;
+		}
+		if (material.occlusionTexture.has_value())
+		{
+			std::cout << "\tOcclusionTexture: \n";
+			std::cout << "\t\tIndex:    \t" << material.occlusionTexture->index << std::endl;
+			std::cout << "\t\tTexCoord: \t" << material.occlusionTexture->texCoord << std::endl;
+			std::cout << "\t\tStrength: \t" << material.occlusionTexture->strength << std::endl;
+		}
+		if (material.emissiveTexture.has_value())
+		{
+			std::cout << "\tEmissiveTexture: \n";
+			std::cout << "\t\tIndex:    \t" << material.emissiveTexture->index << std::endl;
+			std::cout << "\t\tTexCoord: \t" << material.emissiveTexture->texCoord << std::endl;
+		}
+	}
+
 
 	return 0;
 }

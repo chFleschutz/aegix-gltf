@@ -228,13 +228,13 @@ namespace Aegix::GLTF
 
 	struct Sampler
 	{
-		enum MagFilter
+		enum class MagFilter
 		{
 			Nearest = 9728,
 			Linear = 9729
 		};
 
-		enum MinFilter
+		enum class MinFilter
 		{
 			Nearest = 9728,
 			Linear = 9729,
@@ -268,6 +268,10 @@ namespace Aegix::GLTF
 		std::vector<Accessor> accessors;
 		std::vector<BufferView> bufferViews;
 		std::vector<Buffer> buffers;
+		std::vector<Material> materials;
+		std::vector<Texture> textures;
+		std::vector<Image> images;
+		std::vector<Sampler> samplers;
 	};
 
 

@@ -208,7 +208,7 @@ namespace Aegix::GLTF
 				assert(false && "Node has both matrix and TRS transform");
 				return false;
 			}
-			
+
 			if (matrixFound)
 			{
 				gltfNode.transform = matrix;
@@ -258,7 +258,7 @@ namespace Aegix::GLTF
 
 			if (!readAttributes(gltfPrimitive.attributes, jsonPrimitive))
 				return false;
-			
+
 			tryReadOptional<size_t>(jsonPrimitive, "indices", gltfPrimitive.indices);
 			tryReadOptional<size_t>(jsonPrimitive, "material", gltfPrimitive.material);
 
@@ -272,7 +272,7 @@ namespace Aegix::GLTF
 	{
 		auto meshIt = json.find("meshes");
 		if (meshIt == json.end() || !meshIt->is_array()) // Meshes are optional -> return no error
-			return true; 
+			return true;
 
 		meshes.reserve(meshIt->size());
 		for (const auto& jsonMesh : *meshIt)
@@ -384,6 +384,136 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	static bool readPBR(Material& material, const nlohmann::json& json)
+	{
+		auto pbrIt = json.find("pbrMetallicRoughness");
+		if (pbrIt == json.end())  // PBR is optional -> return no error
+			return true;
+
+		Material::PBRMetallicRoughness pbr{};
+		tryReadArray<float, 4>(*pbrIt, "baseColorFactor", pbr.baseColorFactor);
+		tryRead(*pbrIt, "metallicFactor", pbr.metallicFactor);
+		tryRead(*pbrIt, "roughnessFactor", pbr.roughnessFactor);
+
+		auto baseColorTextureIt = pbrIt->find("baseColorTexture");
+		if (baseColorTextureIt != pbrIt->end())
+		{
+			Material::TextureInfo baseColor{};
+			if (!tryRead(*baseColorTextureIt, "index", baseColor.index))
+			{
+				assert(false && "Texture index is required");
+				return false;
+			}
+			tryRead(*baseColorTextureIt, "texCoord", baseColor.texCoord);
+			pbr.baseColorTexture = baseColor;
+		}
+
+		auto metallicRoughnessTextureIt = pbrIt->find("metallicRoughnessTexture");
+		if (metallicRoughnessTextureIt != pbrIt->end())
+		{
+			Material::TextureInfo metallicRoughness{};
+			if (!tryRead(*metallicRoughnessTextureIt, "index", metallicRoughness.index))
+			{
+				assert(false && "Metallic roughness texture index is required");
+				return false;
+			}
+			tryRead(*metallicRoughnessTextureIt, "texCoord", metallicRoughness.texCoord);
+			pbr.metallicRoughnessTexture = metallicRoughness;
+		}
+
+		material.pbrMetallicRoughness = pbr;
+		return true;
+	}
+
+	static bool readNormal(Material& material, const nlohmann::json& json)
+	{
+		auto normalIt = json.find("normalTexture");
+		if (normalIt == json.end()) // Normal texture is optional -> return no error
+			return true;
+
+		Material::NormalTextureInfo normal{};
+		if (!tryRead(*normalIt, "index", normal.index))
+		{
+			assert(false && "Normal texture index is required");
+			return false;
+		}
+		tryRead(*normalIt, "texCoord", normal.texCoord);
+		tryRead(*normalIt, "scale", normal.scale);
+
+		material.normalTexture = normal;
+		return true;
+	}
+
+	static bool readOcclusion(Material& material, const nlohmann::json& json)
+	{
+		auto occlusionIt = json.find("occlusionTexture");
+		if (occlusionIt == json.end()) // Occlusion texture is optional -> return no error
+			return true;
+
+		Material::OcclusionTextureInfo occlusion{};
+		if (!tryRead(*occlusionIt, "index", occlusion.index))
+		{
+			assert(false && "Occlusion texture index is required");
+			return false;
+		}
+		tryRead(*occlusionIt, "texCoord", occlusion.texCoord);
+		tryRead(*occlusionIt, "strength", occlusion.strength);
+
+		material.occlusionTexture = occlusion;
+		return true;
+	}
+
+	static bool readEmissive(Material& material, const nlohmann::json& json)
+	{
+		auto emissiveIt = json.find("emissiveTexture");
+		if (emissiveIt == json.end()) // Emissive texture is optional -> return no error
+			return true;
+
+		Material::TextureInfo emissive{};
+		if (!tryRead(*emissiveIt, "index", emissive.index))
+		{
+			assert(false && "Emissive texture index is required");
+			return false;
+		}
+		tryRead(*emissiveIt, "texCoord", emissive.texCoord);
+
+		material.emissiveTexture = emissive;
+		return true;
+	}
+
+	static bool readMaterials(std::vector<Material>& materials, const nlohmann::json& json)
+	{
+		auto materialIt = json.find("materials");
+		if (materialIt == json.end() || !materialIt->is_array()) // Materials are optional -> return no error
+			return true;
+
+		materials.reserve(materialIt->size());
+		for (const auto& jsonMaterial : *materialIt)
+		{
+			auto& material = materials.emplace_back();
+
+			tryReadOptional<std::string>(jsonMaterial, "name", material.name);
+			tryReadArray<float, 3>(jsonMaterial, "emissiveFactor", material.emissiveFactor);
+			tryReadType<int>(jsonMaterial, "alphaMode", material.alphaMode);
+			tryRead(jsonMaterial, "alphaCutoff", material.alphaCutoff);
+			tryRead(jsonMaterial, "doubleSided", material.doubleSided);
+
+			if (!readPBR(material, jsonMaterial))
+				return false;
+
+			if (!readNormal(material, jsonMaterial))
+				return false;
+
+			if (!readOcclusion(material, jsonMaterial))
+				return false;
+
+			if (!readEmissive(material, jsonMaterial))
+				return false;
+		}
+
+		return true;
+	}
+
 	static std::optional<GLTF> parseGLTF(const std::filesystem::path& path)
 	{
 		std::ifstream file(path, std::ios::in);
@@ -401,7 +531,9 @@ namespace Aegix::GLTF
 			!readMeshes(gltf.meshes, jsonData) ||
 			!readAccessors(gltf.accessors, jsonData) ||
 			!readBufferViews(gltf.bufferViews, jsonData) ||
-			!readBuffers(gltf.buffers, jsonData))
+			!readBuffers(gltf.buffers, jsonData) ||
+			!readMaterials(gltf.materials, jsonData)
+			)
 		{
 			return std::nullopt;
 		}
