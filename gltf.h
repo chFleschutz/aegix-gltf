@@ -215,7 +215,6 @@ namespace Aegix::GLTF
 		struct UriData
 		{
 			std::string uri;	// Required
-			std::vector<uint8_t> data;
 		};
 
 		struct BufferViewData

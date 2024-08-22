@@ -168,9 +168,9 @@ int main()
 			std::cout << "\t\tMetallicFactor:          \t" << material.pbrMetallicRoughness->metallicFactor << std::endl;
 			std::cout << "\t\tRoughnessFactor:         \t" << material.pbrMetallicRoughness->roughnessFactor << std::endl;
 			if (material.pbrMetallicRoughness->baseColorTexture.has_value())
-			std::cout << "\t\tBaseColorTexture:        \t" << material.pbrMetallicRoughness->baseColorTexture->index << std::endl;
+				std::cout << "\t\tBaseColorTexture:        \t" << material.pbrMetallicRoughness->baseColorTexture->index << std::endl;
 			if (material.pbrMetallicRoughness->metallicRoughnessTexture.has_value())
-			std::cout << "\t\tMetallicRoughnessTexture:\t" << material.pbrMetallicRoughness->metallicRoughnessTexture->index << std::endl;
+				std::cout << "\t\tMetallicRoughnessTexture:\t" << material.pbrMetallicRoughness->metallicRoughnessTexture->index << std::endl;
 		}
 		if (material.normalTexture.has_value())
 		{
@@ -203,6 +203,27 @@ int main()
 			std::cout << "\tSampler:       \t" << texture.sampler.value() << std::endl;
 		if (texture.source.has_value())
 			std::cout << "\tSource:        \t" << texture.source.value() << std::endl;
+		std::cout << "\n";
+	}
+
+	// Images
+	std::cout << "Images:\n";
+	for (const auto& image : gltf->images)
+	{
+		std::cout << "\tName:          \t" << image.name.value_or("None") << std::endl;
+		std::visit([](auto&& arg) {
+			using T = std::decay_t<decltype(arg)>;
+			if constexpr (std::is_same_v<T, Aegix::GLTF::Image::UriData>)
+			{
+				std::cout << "\tURI:           \t" << arg.uri << std::endl;
+			}
+			else if constexpr (std::is_same_v<T, Aegix::GLTF::Image::BufferViewData>)
+			{
+				std::cout << "\tBufferView:    \t" << arg.bufferView << std::endl;
+				std::cout << "\tMIME Type:     \t" << arg.mimeType << std::endl;
+			}
+			}, image.data);
+
 		std::cout << "\n";
 	}
 

@@ -532,6 +532,57 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	static bool readImages(std::vector<Image>& images, const nlohmann::json& json)
+	{
+		auto imageIt = json.find("images");
+		if (imageIt == json.end() || !imageIt->is_array()) // Images are optional -> return no error
+			return true;
+
+		images.reserve(imageIt->size());
+		for (const auto& jsonImage : *imageIt)
+		{
+			auto& image = images.emplace_back();
+			
+			Image::UriData uri;
+			auto uriFound = tryRead(jsonImage, "uri", uri.uri);
+
+			Image::BufferViewData bufferView;
+			auto bufferViewFound = tryRead(jsonImage, "bufferView", bufferView.bufferView);
+			auto mimeTypeFound = tryRead(jsonImage, "mimeType", bufferView.mimeType);
+
+			if (uriFound && bufferViewFound)
+			{
+				assert(false && "Image has both uri and bufferView");
+				return false;
+			}
+
+			if (!uriFound && !bufferViewFound)
+			{
+				assert(false && "Image uri or bufferView is required");
+				return false;
+			}
+
+			if (bufferViewFound && !mimeTypeFound)
+			{
+				assert(false && "Image bufferView mimeType is required");
+				return false;
+			}
+
+			if (uriFound)
+			{
+				image.data = uri;
+			}
+			else
+			{
+				image.data = bufferView;
+			}
+
+			tryReadOptional(jsonImage, "name", image.name);
+		}
+
+		return true;
+	}
+
 	static std::optional<GLTF> parseGLTF(const std::filesystem::path& path)
 	{
 		std::ifstream file(path, std::ios::in);
@@ -551,7 +602,8 @@ namespace Aegix::GLTF
 			!readBufferViews(gltf.bufferViews, jsonData) ||
 			!readBuffers(gltf.buffers, jsonData) ||
 			!readMaterials(gltf.materials, jsonData) ||
-			!readTextures(gltf.textures, jsonData)
+			!readTextures(gltf.textures, jsonData) ||
+			!readImages(gltf.images, jsonData)
 			)
 		{
 			return std::nullopt;
