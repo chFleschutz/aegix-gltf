@@ -151,6 +151,113 @@ namespace Aegix::GLTF
 		std::optional<std::string> name;
 	};
 
+	struct Material
+	{
+		struct TextureInfo
+		{
+			size_t index;	// Required
+			size_t texCoord = 0;
+		};
+
+		struct NormalTextureInfo
+		{
+			size_t index;	// Required
+			size_t texCoord = 0;
+			float scale = 1.0f;
+		};
+
+		struct OcclusionTextureInfo
+		{
+			size_t index;	// Required
+			size_t texCoord = 0;
+			float strength = 1.0f;
+		};
+
+		struct PBRMetallicRoughness
+		{
+			Vec4 baseColorFactor{ 1.0f, 1.0f, 1.0f, 1.0f };
+			std::optional<TextureInfo> baseColorTexture;
+			std::optional<TextureInfo> metallicRoughnessTexture;
+			float metallicFactor = 1.0f;
+			float roughnessFactor = 1.0f;
+		};
+
+		enum AlphaMode
+		{
+			Opaque,
+			Mask,
+			AlphaCutoff,
+			Blend
+		};
+
+		std::optional<std::string> name;
+		std::optional<PBRMetallicRoughness> pbrMetallicRoughness;
+		std::optional<NormalTextureInfo> normalTexture;
+		std::optional<OcclusionTextureInfo> occlusionTexture;
+		std::optional<TextureInfo> emissiveTexture;
+		Vec3 emissiveFactor{ 0.0f, 0.0f, 0.0f };
+		AlphaMode alphaMode = Opaque;
+		float alphaCutoff = 0.5f;
+		bool doubleSided = false;
+	};
+
+	struct Texture
+	{
+		std::optional<size_t> sampler; // Spec: When undefined, a sampler with repeat wrapping and auto filtering SHOULD be used
+		std::optional<size_t> source;
+		std::optional<std::string> name;
+	};
+
+	struct Image
+	{
+		struct UriData
+		{
+			std::string uri;	// Required
+			std::vector<uint8_t> data;
+		};
+
+		struct BufferViewData
+		{
+			std::string mimeType;	// Required
+			size_t bufferView;		// Required
+		};
+
+		std::variant<UriData, BufferViewData> data;
+		std::optional<std::string> name;
+	};
+
+	struct Sampler
+	{
+		enum MagFilter
+		{
+			Nearest = 9728,
+			Linear = 9729
+		};
+
+		enum MinFilter
+		{
+			Nearest = 9728,
+			Linear = 9729,
+			NearestMipmapNearest = 9984,
+			LinearMipmapNearest = 9985,
+			NearestMipmapLinear = 9986,
+			LinearMipmapLinear = 9987
+		};
+
+		enum WrapMode
+		{
+			ClampToEdge = 33071,
+			MirroredRepeat = 33648,
+			Repeat = 10497
+		};
+
+		std::optional<MagFilter> magFilter;
+		std::optional<MinFilter> minFilter;
+		WrapMode wrapS = Repeat;
+		WrapMode wrapT = Repeat;
+		std::optional<std::string> name;
+	};
+
 	struct GLTF
 	{
 		Asset asset;
