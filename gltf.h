@@ -203,8 +203,10 @@ namespace Aegix::GLTF
 
 	struct Texture
 	{
-		std::optional<size_t> sampler; // Spec: When undefined, a sampler with repeat wrapping and auto filtering SHOULD be used
-		std::optional<size_t> source;
+		// Spec: When undefined, a sampler with repeat wrapping and auto filtering SHOULD be used
+		std::optional<size_t> sampler; 
+		// Spec: When undefined, an extension or other mechanism SHOULD supply an alternate texture source, otherwise behavior is undefined.
+		std::optional<size_t> source;  
 		std::optional<std::string> name;
 	};
 

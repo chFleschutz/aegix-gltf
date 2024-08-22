@@ -514,6 +514,24 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	static bool readTextures(std::vector<Texture>& textures, const nlohmann::json& json)
+	{
+		auto textureIt = json.find("textures");
+		if (textureIt == json.end() || !textureIt->is_array()) // Textures are optional -> return no error
+			return true;
+
+		textures.reserve(textureIt->size());
+		for (const auto& jsonTexture : *textureIt)
+		{
+			auto& texture = textures.emplace_back();
+			tryReadOptional(jsonTexture, "sampler", texture.sampler);
+			tryReadOptional(jsonTexture, "source", texture.source);
+			tryReadOptional(jsonTexture, "name", texture.name);
+		}
+
+		return true;
+	}
+
 	static std::optional<GLTF> parseGLTF(const std::filesystem::path& path)
 	{
 		std::ifstream file(path, std::ios::in);
@@ -532,7 +550,8 @@ namespace Aegix::GLTF
 			!readAccessors(gltf.accessors, jsonData) ||
 			!readBufferViews(gltf.bufferViews, jsonData) ||
 			!readBuffers(gltf.buffers, jsonData) ||
-			!readMaterials(gltf.materials, jsonData)
+			!readMaterials(gltf.materials, jsonData) ||
+			!readTextures(gltf.textures, jsonData)
 			)
 		{
 			return std::nullopt;

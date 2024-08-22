@@ -194,6 +194,17 @@ int main()
 		}
 	}
 
+	// Textures
+	std::cout << "Textures:\n";
+	for (const auto& texture : gltf->textures)
+	{
+		std::cout << "\tName:          \t" << texture.name.value_or("None") << std::endl;
+		if (texture.sampler.has_value())
+			std::cout << "\tSampler:       \t" << texture.sampler.value() << std::endl;
+		if (texture.source.has_value())
+			std::cout << "\tSource:        \t" << texture.source.value() << std::endl;
+		std::cout << "\n";
+	}
 
 	return 0;
 }
