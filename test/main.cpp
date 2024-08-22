@@ -227,5 +227,19 @@ int main()
 		std::cout << "\n";
 	}
 
+	// Samplers
+	std::cout << "Samplers:\n";
+	for (const auto& sampler : gltf->samplers)
+	{
+		std::cout << "\tName:          \t" << sampler.name.value_or("None") << std::endl;
+		if (sampler.magFilter.has_value())
+			std::cout << "\tMagFilter:     \t" << static_cast<int>(sampler.magFilter.value()) << std::endl;
+		if (sampler.minFilter.has_value())
+			std::cout << "\tMinFilter:     \t" << static_cast<int>(sampler.minFilter.value()) << std::endl;
+		std::cout << "\tWrapS:         \t" << sampler.wrapS << std::endl;
+		std::cout << "\tWrapT:         \t" << sampler.wrapT << std::endl;
+		std::cout << "\n";
+	}
+
 	return 0;
 }

@@ -8,6 +8,13 @@
 #include <iostream>
 #include <type_traits>
 
+
+// @brief Used to mark required fields in the GLTF file
+// @return If the condition is false, an assertion is triggered and the function returns false
+// @note The function must return a boolean value
+#define REQUIRE(condition, message) if (!(condition)) { assert(false && "Invalid GLTF file: " message); return false; }
+
+
 namespace Aegix::GLTF
 {
 	/// @brief Reads a value from a JSON object by key and stores it in outValue.
@@ -143,17 +150,8 @@ namespace Aegix::GLTF
 	static bool readAsset(Asset& asset, const nlohmann::json& json)
 	{
 		auto assetIt = json.find("asset");
-		if (assetIt == json.end()) // Asset is required -> return error
-		{
-			assert(false && "GLTF asset is required");
-			return false;
-		}
-
-		if (!tryRead(*assetIt, "version", asset.version))
-		{
-			assert(false && "GLTF asset version is required");
-			return false;
-		}
+		REQUIRE(assetIt != json.end(), "GLTF asset is required");
+		REQUIRE(tryRead(*assetIt, "version", asset.version), "GLTF asset version is required");
 
 		tryReadOptional<std::string>(*assetIt, "generator", asset.generator);
 		tryReadOptional<std::string>(*assetIt, "minVersion", asset.minVersion);
@@ -203,20 +201,17 @@ namespace Aegix::GLTF
 			bool rotationFound = tryReadArray<float, 4>(jsonNode, "rotation", trs.rotation);
 			bool scaleFound = tryReadArray<float, 3>(jsonNode, "scale", trs.scale);
 
-			if (matrixFound && (translationFound || rotationFound || scaleFound))
-			{
-				assert(false && "Node has both matrix and TRS transform");
-				return false;
-			}
+			REQUIRE(!matrixFound || (!translationFound && !rotationFound && !scaleFound),
+				"Node cannot have both matrix and TRS transform")
 
-			if (matrixFound)
-			{
-				gltfNode.transform = matrix;
-			}
-			else
-			{
-				gltfNode.transform = trs;
-			}
+				if (matrixFound)
+				{
+					gltfNode.transform = matrix;
+				}
+				else
+				{
+					gltfNode.transform = trs;
+				}
 
 			tryReadVector<size_t>(jsonNode, "children", gltfNode.children);
 			tryReadOptional<size_t>(jsonNode, "camera", gltfNode.camera);
@@ -231,8 +226,7 @@ namespace Aegix::GLTF
 	static bool readAttributes(std::vector<Mesh::Primitive::Attribute>& attributes, const nlohmann::json& json)
 	{
 		auto attributesIt = json.find("attributes");
-		if (attributesIt == json.end()) // Attributes are required -> return error
-			return false;
+		REQUIRE(attributesIt != json.end(), "Primitive attributes are required");
 
 		attributes.reserve(attributesIt->size());
 		for (const auto& [key, value] : attributesIt->items())
@@ -248,8 +242,7 @@ namespace Aegix::GLTF
 	static bool readPrimitives(std::vector<Mesh::Primitive>& primitives, const nlohmann::json& json)
 	{
 		auto primitivesIt = json.find("primitives");
-		if (primitivesIt == json.end() || !primitivesIt->is_array()) // Primitives are required -> return error
-			return false;
+		REQUIRE(primitivesIt != json.end() || !primitivesIt->is_array(), "Primitives are required");
 
 		primitives.reserve(primitivesIt->size());
 		for (const auto& jsonPrimitive : *primitivesIt)
@@ -299,23 +292,12 @@ namespace Aegix::GLTF
 		{
 			auto& gltfAccessor = accessors.emplace_back();
 
-			if (!tryRead(jsonAccessor, "count", gltfAccessor.count))
-			{
-				assert(false && "Accessor count is required");
-				return false;
-			}
-
-			if (!tryReadType<int>(jsonAccessor, "componentType", gltfAccessor.componentType))
-			{
-				assert(false && "Accessor componentType is required");
-				return false;
-			}
-
-			if (!tryReadParse<std::string, Accessor::Type>(jsonAccessor, "type", gltfAccessor.type, parseAccessorType))
-			{
-				assert(false && "Accessor type is required");
-				return false;
-			}
+			REQUIRE(tryRead(jsonAccessor, "count", gltfAccessor.count),
+				"Accessor count is required");
+			REQUIRE(tryReadType<int>(jsonAccessor, "componentType", gltfAccessor.componentType),
+				"Accessor componentType is required");
+			REQUIRE((tryReadParse<std::string, Accessor::Type>(jsonAccessor, "type", gltfAccessor.type, parseAccessorType)),
+				"Accessor type is required");
 
 			tryReadOptional<size_t>(jsonAccessor, "bufferView", gltfAccessor.bufferView);
 			tryRead(jsonAccessor, "byteOffset", gltfAccessor.byteOffset);
@@ -339,18 +321,10 @@ namespace Aegix::GLTF
 		{
 			auto& gltfBufferView = bufferViews.emplace_back();
 
-			if (!tryRead(jsonBufferView, "buffer", gltfBufferView.buffer))
-			{
-				assert(false && "BufferView buffer is required");
-				return false;
-			}
-
-			if (!tryRead(jsonBufferView, "byteLength", gltfBufferView.byteLength))
-			{
-				assert(false && "BufferView byteLength is required");
-				return false;
-			}
-
+			REQUIRE(tryRead(jsonBufferView, "buffer", gltfBufferView.buffer), 
+				"BufferView buffer is required");
+			REQUIRE(tryRead(jsonBufferView, "byteLength", gltfBufferView.byteLength), 
+				"BufferView byteLength is required");
 			tryRead(jsonBufferView, "byteOffset", gltfBufferView.byteOffset);
 			tryReadOptional<size_t>(jsonBufferView, "byteStride", gltfBufferView.byteStride);
 			tryReadOptionalType<int>(jsonBufferView, "target", gltfBufferView.target);
@@ -371,12 +345,8 @@ namespace Aegix::GLTF
 		{
 			auto& gltfBuffer = buffers.emplace_back();
 
-			if (!tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength))
-			{
-				assert(false && "Buffer byteLength is required");
-				return false;
-			}
-
+			REQUIRE(tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength), 
+				"Buffer byteLength is required");
 			tryReadOptional<std::string>(jsonBuffer, "uri", gltfBuffer.uri);
 			tryReadOptional<std::string>(jsonBuffer, "name", gltfBuffer.name);
 		}
@@ -399,26 +369,20 @@ namespace Aegix::GLTF
 		if (baseColorTextureIt != pbrIt->end())
 		{
 			Material::TextureInfo baseColor{};
-			if (!tryRead(*baseColorTextureIt, "index", baseColor.index))
-			{
-				assert(false && "Texture index is required");
-				return false;
-			}
+			REQUIRE(tryRead(*baseColorTextureIt, "index", baseColor.index), 
+				"Base color texture index is required");
 			tryRead(*baseColorTextureIt, "texCoord", baseColor.texCoord);
 			pbr.baseColorTexture = baseColor;
 		}
 
-		auto metallicRoughnessTextureIt = pbrIt->find("metallicRoughnessTexture");
-		if (metallicRoughnessTextureIt != pbrIt->end())
+		auto metallicRoughnessIt = pbrIt->find("metallicRoughnessTexture");
+		if (metallicRoughnessIt != pbrIt->end())
 		{
-			Material::TextureInfo metallicRoughness{};
-			if (!tryRead(*metallicRoughnessTextureIt, "index", metallicRoughness.index))
-			{
-				assert(false && "Metallic roughness texture index is required");
-				return false;
-			}
-			tryRead(*metallicRoughnessTextureIt, "texCoord", metallicRoughness.texCoord);
-			pbr.metallicRoughnessTexture = metallicRoughness;
+			Material::TextureInfo textureInfo{};
+			REQUIRE(tryRead(*metallicRoughnessIt, "index", textureInfo.index), 
+				"Metallic roughness texture index is required");
+			tryRead(*metallicRoughnessIt, "texCoord", textureInfo.texCoord);
+			pbr.metallicRoughnessTexture = textureInfo;
 		}
 
 		material.pbrMetallicRoughness = pbr;
@@ -432,11 +396,9 @@ namespace Aegix::GLTF
 			return true;
 
 		Material::NormalTextureInfo normal{};
-		if (!tryRead(*normalIt, "index", normal.index))
-		{
-			assert(false && "Normal texture index is required");
-			return false;
-		}
+
+		REQUIRE(tryRead(*normalIt, "index", normal.index), 
+			"Normal texture index is required");
 		tryRead(*normalIt, "texCoord", normal.texCoord);
 		tryRead(*normalIt, "scale", normal.scale);
 
@@ -451,11 +413,9 @@ namespace Aegix::GLTF
 			return true;
 
 		Material::OcclusionTextureInfo occlusion{};
-		if (!tryRead(*occlusionIt, "index", occlusion.index))
-		{
-			assert(false && "Occlusion texture index is required");
-			return false;
-		}
+
+		REQUIRE(tryRead(*occlusionIt, "index", occlusion.index), 
+			"Occlusion texture index is required");
 		tryRead(*occlusionIt, "texCoord", occlusion.texCoord);
 		tryRead(*occlusionIt, "strength", occlusion.strength);
 
@@ -470,11 +430,9 @@ namespace Aegix::GLTF
 			return true;
 
 		Material::TextureInfo emissive{};
-		if (!tryRead(*emissiveIt, "index", emissive.index))
-		{
-			assert(false && "Emissive texture index is required");
-			return false;
-		}
+
+		REQUIRE(tryRead(*emissiveIt, "index", emissive.index), 
+			"Emissive texture index is required");
 		tryRead(*emissiveIt, "texCoord", emissive.texCoord);
 
 		material.emissiveTexture = emissive;
@@ -492,23 +450,16 @@ namespace Aegix::GLTF
 		{
 			auto& material = materials.emplace_back();
 
+			REQUIRE(readPBR(material, jsonMaterial), "PBR metallict roughness is required");
+			REQUIRE(readNormal(material, jsonMaterial), "Normal texture info is required");
+			REQUIRE(readOcclusion(material, jsonMaterial), "Occlusion texture info is required");
+			REQUIRE(readEmissive(material, jsonMaterial), "Emissive texture info");
+
 			tryReadOptional<std::string>(jsonMaterial, "name", material.name);
 			tryReadArray<float, 3>(jsonMaterial, "emissiveFactor", material.emissiveFactor);
 			tryReadType<int>(jsonMaterial, "alphaMode", material.alphaMode);
 			tryRead(jsonMaterial, "alphaCutoff", material.alphaCutoff);
 			tryRead(jsonMaterial, "doubleSided", material.doubleSided);
-
-			if (!readPBR(material, jsonMaterial))
-				return false;
-
-			if (!readNormal(material, jsonMaterial))
-				return false;
-
-			if (!readOcclusion(material, jsonMaterial))
-				return false;
-
-			if (!readEmissive(material, jsonMaterial))
-				return false;
 		}
 
 		return true;
@@ -542,7 +493,7 @@ namespace Aegix::GLTF
 		for (const auto& jsonImage : *imageIt)
 		{
 			auto& image = images.emplace_back();
-			
+
 			Image::UriData uri;
 			auto uriFound = tryRead(jsonImage, "uri", uri.uri);
 
@@ -550,23 +501,9 @@ namespace Aegix::GLTF
 			auto bufferViewFound = tryRead(jsonImage, "bufferView", bufferView.bufferView);
 			auto mimeTypeFound = tryRead(jsonImage, "mimeType", bufferView.mimeType);
 
-			if (uriFound && bufferViewFound)
-			{
-				assert(false && "Image has both uri and bufferView");
-				return false;
-			}
-
-			if (!uriFound && !bufferViewFound)
-			{
-				assert(false && "Image uri or bufferView is required");
-				return false;
-			}
-
-			if (bufferViewFound && !mimeTypeFound)
-			{
-				assert(false && "Image bufferView mimeType is required");
-				return false;
-			}
+			REQUIRE(!uriFound || !bufferViewFound, "Image cannot have both uri and bufferView");
+			REQUIRE(uriFound || bufferViewFound, "Image requires uri or bufferView");
+			REQUIRE(mimeTypeFound || !bufferViewFound, "Image bufferView mimeType is required when bufferView is defined");
 
 			if (uriFound)
 			{
@@ -578,6 +515,26 @@ namespace Aegix::GLTF
 			}
 
 			tryReadOptional(jsonImage, "name", image.name);
+		}
+
+		return true;
+	}
+
+	static bool readSamplers(std::vector<Sampler>& samplers, const nlohmann::json& json)
+	{
+		auto samplerIt = json.find("samplers");
+		if (samplerIt == json.end() || !samplerIt->is_array()) // Samplers are optional -> return no error
+			return true;
+
+		samplers.reserve(samplerIt->size());
+		for (const auto& jsonSampler : *samplerIt)
+		{
+			auto& sampler = samplers.emplace_back();
+			tryReadOptionalType<int>(jsonSampler, "magFilter", sampler.magFilter);
+			tryReadOptionalType<int>(jsonSampler, "minFilter", sampler.minFilter);
+			tryReadType<int>(jsonSampler, "wrapS", sampler.wrapS);
+			tryReadType<int>(jsonSampler, "wrapT", sampler.wrapT);
+			tryReadOptional(jsonSampler, "name", sampler.name);
 		}
 
 		return true;
@@ -603,8 +560,8 @@ namespace Aegix::GLTF
 			!readBuffers(gltf.buffers, jsonData) ||
 			!readMaterials(gltf.materials, jsonData) ||
 			!readTextures(gltf.textures, jsonData) ||
-			!readImages(gltf.images, jsonData)
-			)
+			!readImages(gltf.images, jsonData) ||
+			!readSamplers(gltf.samplers, jsonData))
 		{
 			return std::nullopt;
 		}
