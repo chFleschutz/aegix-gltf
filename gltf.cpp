@@ -259,6 +259,8 @@ namespace Aegix::GLTF
 			if (tryRead<int>(jsonPrimitive, "mode", mode))
 				gltfPrimitive.mode = static_cast<Mesh::Primitive::Mode>(mode);
 		}
+
+		return true;
 	}
 
 	static bool readMeshes(std::vector<Mesh>& meshes, const nlohmann::json& json)
