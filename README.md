@@ -64,9 +64,9 @@ The project builds as a static library. To use it in another project, follow the
 
     Call `Aegix::GLTF::load` to load a GLTF file. The function returns a `std::optional` which only contains a value if loading the file succeeds.
 
-5. **(Optional) Include `gltf_print`**
+5. **(Optional) Include `gltf_print.h`**
 
-    Include gltf_print to define operator overloads for printing the GLTF structs.
+    Include `gltf_print.h` to define operator overloads for printing the GLTF structs.
 
 ### Example
 
