@@ -14,5 +14,6 @@ int main()
 	std::cout << "GLTF file: " << gltfFilePath << "\n\n";
 	std::cout << gltf.value() << "\n";
 
+	std::cin.get();
 	return 0;
 }
