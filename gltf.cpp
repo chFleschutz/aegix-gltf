@@ -5,8 +5,6 @@
 #include <cassert>
 #include <fstream>
 #include <functional>
-#include <iostream>
-#include <type_traits>
 
 
 // @brief Used to mark required fields in the GLTF file
@@ -23,11 +21,11 @@ namespace Aegix::GLTF
 	template<typename T>
 	static bool tryRead(const nlohmann::json& json, const char* key, T& outValue)
 	{
-		auto it = json.find(key);
-		if (it == json.end())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end())
 			return false;
 
-		outValue = it->get<T>();
+		outValue = keyIt->get<T>();
 		return true;
 	}
 
@@ -38,11 +36,11 @@ namespace Aegix::GLTF
 	template<typename T, typename U>
 	static bool tryReadType(const nlohmann::json& json, const char* key, U& outValue)
 	{
-		auto it = json.find(key);
-		if (it == json.end())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end())
 			return false;
 
-		outValue = static_cast<U>(it->get<T>());
+		outValue = static_cast<U>(keyIt->get<T>());
 		return true;
 	}
 
@@ -54,11 +52,11 @@ namespace Aegix::GLTF
 	template<typename T, typename U>
 	static bool tryReadParse(const nlohmann::json& json, const char* key, U& outValue, std::function<U(const T&)> parser)
 	{
-		auto it = json.find(key);
-		if (it == json.end())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end())
 			return false;
 
-		outValue = parser(it->get<T>());
+		outValue = parser(keyIt->get<T>());
 		return true;
 	}
 
@@ -69,11 +67,11 @@ namespace Aegix::GLTF
 	static bool tryReadOptional(const nlohmann::json& json, const char* key, std::optional<T>& outValue)
 	{
 		outValue = std::nullopt;
-		auto it = json.find(key);
-		if (it == json.end())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end())
 			return false;
 
-		outValue = it->get<T>();
+		outValue = keyIt->get<T>();
 		return true;
 	}
 
@@ -85,11 +83,11 @@ namespace Aegix::GLTF
 	static bool tryReadOptionalType(const nlohmann::json& json, const char* key, std::optional<U>& outValue)
 	{
 		outValue = std::nullopt;
-		auto it = json.find(key);
-		if (it == json.end())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end())
 			return false;
 
-		auto valueU = static_cast<U>(it->get<T>());
+		auto valueU = static_cast<U>(keyIt->get<T>());
 		outValue = valueU;
 		return true;
 	}
@@ -100,12 +98,12 @@ namespace Aegix::GLTF
 	template<typename T>
 	static bool tryReadVector(const nlohmann::json& json, const char* key, std::vector<T>& outValue)
 	{
-		auto it = json.find(key);
-		if (it == json.end() || !it->is_array())
+		auto keyIt = json.find(key);
+		if (keyIt == json.end() || !keyIt->is_array())
 			return false;
 
 		outValue.clear();
-		for (const auto& element : *it)
+		for (const auto& element : *keyIt)
 		{
 			outValue.emplace_back(element.get<T>());
 		}
@@ -120,13 +118,13 @@ namespace Aegix::GLTF
 	template<typename T, size_t Size>
 	static bool tryReadArray(const nlohmann::json& json, const char* key, std::array<T, Size>& outValue)
 	{
-		auto it = json.find(key);
-		if (it == json.end() || !it->is_array() || it->size() != Size)
+		auto keyIt = json.find(key);
+		if (keyIt == json.end() || !keyIt->is_array() || keyIt->size() != Size)
 			return false;
 
 		for (size_t i = 0; i < Size; ++i)
 		{
-			outValue[i] = (*it)[i].get<T>();
+			outValue[i] = (*keyIt)[i].get<T>();
 		}
 
 		return true;
@@ -141,7 +139,8 @@ namespace Aegix::GLTF
 		if (typeString == "MAT2") return Accessor::Type::Mat2;
 		if (typeString == "MAT3") return Accessor::Type::Mat3;
 		if (typeString == "MAT4") return Accessor::Type::Mat4;
-		else assert(false && "Invalid accessor type");
+
+		assert(false && "Invalid accessor type");
 		return Accessor::Type{};
 	}
 
@@ -580,16 +579,12 @@ namespace Aegix::GLTF
 	std::optional<GLTF> load(const std::filesystem::path& path)
 	{
 		if (path.extension() == ".gltf")
-		{
 			return parseGLTF(path);
-		}
-		else if (path.extension() == ".glb")
-		{
+
+		if (path.extension() == ".glb")
 			return parseGLB(path);
-		}
-		else // Unsupported file format
-		{
-			return std::nullopt;
-		}
+
+		// Unsupported file format
+		return std::nullopt;
 	}
 }
