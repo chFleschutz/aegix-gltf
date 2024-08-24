@@ -6,7 +6,7 @@
 
 namespace Aegix::GLTF
 {
-	std::ostream& operator<<(std::ostream& os, const Mesh::Primitive::Mode& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Mesh::Primitive::Mode& mode)
 	{
 		switch (mode)
 		{
@@ -21,7 +21,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Accessor::ComponentType& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Accessor::ComponentType& mode)
 	{
 		switch (mode)
 		{
@@ -35,7 +35,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Accessor::Type& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Accessor::Type& mode)
 	{
 		switch (mode)
 		{
@@ -50,7 +50,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const BufferView::Target& mode)
+	inline std::ostream& operator<<(std::ostream& os, const BufferView::Target& mode)
 	{
 		switch (mode)
 		{
@@ -60,7 +60,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material::AlphaMode& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Material::AlphaMode& mode)
 	{
 		switch (mode)
 		{
@@ -72,7 +72,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Sampler::MagFilter& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Sampler::MagFilter& mode)
 	{
 		switch (mode)
 		{
@@ -82,7 +82,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Sampler::MinFilter& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Sampler::MinFilter& mode)
 	{
 		switch (mode)
 		{
@@ -96,7 +96,7 @@ namespace Aegix::GLTF
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Sampler::WrapMode& mode)
+	inline std::ostream& operator<<(std::ostream& os, const Sampler::WrapMode& mode)
 	{
 		switch (mode)
 		{
@@ -108,7 +108,7 @@ namespace Aegix::GLTF
 	}
 
 	template<typename T>
-	std::ostream& operator<<(std::ostream& os, const std::optional<T>& opt)
+	inline std::ostream& operator<<(std::ostream& os, const std::optional<T>& opt)
 	{
 		if (opt.has_value()) {
 			os << *opt;
@@ -120,7 +120,7 @@ namespace Aegix::GLTF
 	}
 
 	template<typename T, std::size_t N>
-	std::ostream& operator<<(std::ostream& os, const std::array<T, N>& arr)
+	inline std::ostream& operator<<(std::ostream& os, const std::array<T, N>& arr)
 	{
 		os << "[ ";
 		for (std::size_t i = 0; i < N; ++i) {
@@ -133,7 +133,7 @@ namespace Aegix::GLTF
 	}
 
 	template<typename T>
-	std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
+	inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
 	{
 		os << "[ ";
 		auto size = vec.size();
@@ -146,7 +146,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Asset& asset)
+	inline std::ostream& operator<<(std::ostream& os, const Asset& asset)
 	{
 		os << "Version:     \t" << asset.version << "\n";
 		os << "Generator:   \t" << asset.generator << "\n";
@@ -155,14 +155,14 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Scene& scene)
+	inline std::ostream& operator<<(std::ostream& os, const Scene& scene)
 	{
 		os << "\tName:  \t" << scene.name << "\n";
 		os << "\tNodes: \t" << scene.nodes << "\n";
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Node& node)
+	inline std::ostream& operator<<(std::ostream& os, const Node& node)
 	{
 		os << "\tName: \t" << node.name << "\n";
 		os << "\tChildren: \t" << node.children << "\n";
@@ -193,12 +193,12 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Mesh::Primitive::Attribute& attribute)
+	inline std::ostream& operator<<(std::ostream& os, const Mesh::Primitive::Attribute& attribute)
 	{
 		return os << attribute.semantic << ": \t" << attribute.accessor << "\n";
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Mesh::Primitive& primitive)
+	inline std::ostream& operator<<(std::ostream& os, const Mesh::Primitive& primitive)
 	{
 		os << "\t\tIndices:  \t" << primitive.indices << "\n";
 		os << "\t\tMaterial: \t" << primitive.material << "\n";
@@ -211,7 +211,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Mesh& mesh)
+	inline std::ostream& operator<<(std::ostream& os, const Mesh& mesh)
 	{
 		os << "\tName: \t" << mesh.name << "\n";
 		os << "\tPrimitives:\n";
@@ -222,7 +222,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Accessor& accessor)
+	inline std::ostream& operator<<(std::ostream& os, const Accessor& accessor)
 	{
 		os << "\tName:          \t" << accessor.name << "\n";
 		os << "\tBufferView:    \t" << accessor.bufferView << "\n";
@@ -236,7 +236,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const BufferView& bufferView)
+	inline std::ostream& operator<<(std::ostream& os, const BufferView& bufferView)
 	{
 		os << "\tName:          \t" << bufferView.name << "\n";
 		os << "\tBuffer:        \t" << bufferView.buffer << "\n";
@@ -247,7 +247,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Buffer& buffer)
+	inline std::ostream& operator<<(std::ostream& os, const Buffer& buffer)
 	{
 		os << "\tName:          \t" << buffer.name << "\n";
 		os << "\tByteLength:    \t" << buffer.byteLength << "\n";
@@ -255,14 +255,14 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material::TextureInfo& material)
+	inline std::ostream& operator<<(std::ostream& os, const Material::TextureInfo& material)
 	{
 		os << "\t\tIndex:    \t" << material.index << "\n";
 		os << "\t\tTexCoord: \t" << material.texCoord << "\n";
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material::NormalTextureInfo& material)
+	inline std::ostream& operator<<(std::ostream& os, const Material::NormalTextureInfo& material)
 	{
 		os << "\t\tIndex:    \t" << material.index << "\n";
 		os << "\t\tTexCoord: \t" << material.texCoord << "\n";
@@ -270,7 +270,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material::OcclusionTextureInfo& material)
+	inline std::ostream& operator<<(std::ostream& os, const Material::OcclusionTextureInfo& material)
 	{
 		os << "\t\tIndex:    \t" << material.index << "\n";
 		os << "\t\tTexCoord: \t" << material.texCoord << "\n";
@@ -278,7 +278,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material::PBRMetallicRoughness& pbr)
+	inline std::ostream& operator<<(std::ostream& os, const Material::PBRMetallicRoughness& pbr)
 	{
 		os << "\t\tBaseColorFactor:         \t" << pbr.baseColorFactor << "\n";
 		os << "\t\tMetallicFactor:          \t" << pbr.metallicFactor << "\n";
@@ -288,7 +288,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Material& material)
+	inline std::ostream& operator<<(std::ostream& os, const Material& material)
 	{
 		os << "\tName:          \t" << material.name << "\n";
 		os << "\tAlphaMode:     \t" << material.alphaMode << "\n";
@@ -302,7 +302,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Texture& texture)
+	inline std::ostream& operator<<(std::ostream& os, const Texture& texture)
 	{
 		os << "\tName:    \t" << texture.name << "\n";
 		os << "\tSampler: \t" << texture.sampler << "\n";
@@ -310,7 +310,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Image& image)
+	inline std::ostream& operator<<(std::ostream& os, const Image& image)
 	{
 		os << "\tName:       \t" << image.name << "\n";
 		std::visit([&](auto&& arg) {
@@ -328,7 +328,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Sampler& sampler)
+	inline std::ostream& operator<<(std::ostream& os, const Sampler& sampler)
 	{
 		os << "\tName:      \t" << sampler.name << "\n";
 		os << "\tMagFilter: \t" << sampler.magFilter << "\n";
@@ -338,7 +338,7 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const GLTF& gltf)
+	inline std::ostream& operator<<(std::ostream& os, const GLTF& gltf)
 	{
 		os << std::fixed << std::setprecision(2) << std::boolalpha;
 		os << "Asset:\n";
