@@ -222,7 +222,7 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static bool readAttributes(std::vector<Mesh::Primitive::Attribute>& attributes, const nlohmann::json& json)
+	static bool readAttributes(std::unordered_map<std::string, size_t>& attributes, const nlohmann::json& json)
 	{
 		auto attributesIt = json.find("attributes");
 		REQUIRE(attributesIt != json.end(), "Primitive attributes are required");
@@ -230,9 +230,7 @@ namespace Aegix::GLTF
 		attributes.reserve(attributesIt->size());
 		for (const auto& [key, value] : attributesIt->items())
 		{
-			auto& attribute = attributes.emplace_back();
-			attribute.semantic = key;
-			attribute.accessor = value.get<size_t>();
+			attributes.emplace(key, value.get<size_t>());
 		}
 
 		return true;

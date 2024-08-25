@@ -193,20 +193,15 @@ namespace Aegix::GLTF
 		return os;
 	}
 
-	inline std::ostream& operator<<(std::ostream& os, const Mesh::Primitive::Attribute& attribute)
-	{
-		return os << attribute.semantic << ": \t" << attribute.accessor << "\n";
-	}
-
 	inline std::ostream& operator<<(std::ostream& os, const Mesh::Primitive& primitive)
 	{
 		os << "\t\tIndices:  \t" << primitive.indices << "\n";
 		os << "\t\tMaterial: \t" << primitive.material << "\n";
 		os << "\t\tMode:     \t" << primitive.mode << "\n";
 		os << "\t\tAttributes:\n";
-		for (const auto& attribute : primitive.attributes)
+		for (const auto& [semantic, accessor] : primitive.attributes)
 		{
-			os << "\t\t\t" << attribute;
+			os << "\t\t\t" << semantic << ": \t" << accessor << "\n";
 		}
 		return os;
 	}

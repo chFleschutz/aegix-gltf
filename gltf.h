@@ -1,11 +1,13 @@
 #pragma once
 
 #include <array>
+#include <filesystem>
+#include <map>
+#include <optional>
 #include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
-#include <optional>
-#include <filesystem>
 
 namespace Aegix::GLTF
 {
@@ -61,12 +63,6 @@ namespace Aegix::GLTF
 	{
 		struct Primitive
 		{
-			struct Attribute
-			{
-				std::string semantic;	// Required
-				size_t accessor;		// Required
-			};
-
 			enum class Mode
 			{
 				Points = 0,
@@ -78,7 +74,7 @@ namespace Aegix::GLTF
 				TriangleFan = 6
 			};
 
-			std::vector<Attribute> attributes;	// Required
+			std::unordered_map<std::string, size_t> attributes; // Required
 			std::optional<size_t> indices;
 			std::optional<size_t> material;
 			Mode mode = Mode::Triangles;
