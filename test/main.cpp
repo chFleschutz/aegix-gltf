@@ -3,7 +3,7 @@
 
 int main()
 {
-	std::filesystem::path gltfFilePath = PROJECT_DIR "/DamagedHelmet.gltf";
+	std::filesystem::path gltfFilePath = PROJECT_DIR "/helmet/DamagedHelmet.gltf";
 	auto gltf = Aegix::GLTF::load(gltfFilePath);
 	if (!gltf.has_value())
 	{
