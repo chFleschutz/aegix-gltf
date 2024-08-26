@@ -64,21 +64,40 @@ namespace Aegix::GLTF
 	}
 
 
-	static std::vector<uint8_t> loadUriData(const std::string_view& uri)
+	static std::vector<uint8_t> loadUriData(std::string_view uri)
 	{
 		std::string_view marker = "base64,";
 		auto pos = uri.find(marker);
 		if (pos == std::string::npos)
+		{
+			assert(false && "Invalid data URI");
 			return {};
+		}
 
 		auto data = uri.substr(pos + marker.size());
 		return base64::decode(data);
 	}
 
-	static std::vector<uint8_t> loadbuffer(const std::string& uri)
+	static std::vector<uint8_t> loadbuffer(const std::filesystem::path& basePath, const std::string& uri)
 	{
 		if (uri.substr(0, 5) == "data:")
 			return loadUriData(uri);
+
+		std::ifstream file(basePath / uri, std::ios::in | std::ios::binary | std::ios::ate);
+		if (!file.is_open())
+		{
+			assert(false && "Failed to open buffer file");
+			return {};
+		}
+
+		auto size = file.tellg();
+		file.seekg(0, std::ios::beg);
+
+		std::vector<uint8_t> buffer(size);
+		file.read(reinterpret_cast<char*>(buffer.data()), size);
+		file.close();
+
+		return buffer;
 	}
 
 	/// @brief Reads a value from a JSON object by key and stores it in outValue.
@@ -386,9 +405,9 @@ namespace Aegix::GLTF
 		{
 			auto& gltfBufferView = bufferViews.emplace_back();
 
-			REQUIRE(tryRead(jsonBufferView, "buffer", gltfBufferView.buffer), 
+			REQUIRE(tryRead(jsonBufferView, "buffer", gltfBufferView.buffer),
 				"BufferView buffer is required");
-			REQUIRE(tryRead(jsonBufferView, "byteLength", gltfBufferView.byteLength), 
+			REQUIRE(tryRead(jsonBufferView, "byteLength", gltfBufferView.byteLength),
 				"BufferView byteLength is required");
 			tryRead(jsonBufferView, "byteOffset", gltfBufferView.byteOffset);
 			tryReadOptional<size_t>(jsonBufferView, "byteStride", gltfBufferView.byteStride);
@@ -410,7 +429,7 @@ namespace Aegix::GLTF
 		{
 			auto& gltfBuffer = buffers.emplace_back();
 
-			REQUIRE(tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength), 
+			REQUIRE(tryRead(jsonBuffer, "byteLength", gltfBuffer.byteLength),
 				"Buffer byteLength is required");
 			tryReadOptional<std::string>(jsonBuffer, "uri", gltfBuffer.uri);
 			tryReadOptional<std::string>(jsonBuffer, "name", gltfBuffer.name);
@@ -434,7 +453,7 @@ namespace Aegix::GLTF
 		if (baseColorTextureIt != pbrIt->end())
 		{
 			Material::TextureInfo baseColor{};
-			REQUIRE(tryRead(*baseColorTextureIt, "index", baseColor.index), 
+			REQUIRE(tryRead(*baseColorTextureIt, "index", baseColor.index),
 				"Base color texture index is required");
 			tryRead(*baseColorTextureIt, "texCoord", baseColor.texCoord);
 			pbr.baseColorTexture = baseColor;
@@ -444,7 +463,7 @@ namespace Aegix::GLTF
 		if (metallicRoughnessIt != pbrIt->end())
 		{
 			Material::TextureInfo textureInfo{};
-			REQUIRE(tryRead(*metallicRoughnessIt, "index", textureInfo.index), 
+			REQUIRE(tryRead(*metallicRoughnessIt, "index", textureInfo.index),
 				"Metallic roughness texture index is required");
 			tryRead(*metallicRoughnessIt, "texCoord", textureInfo.texCoord);
 			pbr.metallicRoughnessTexture = textureInfo;
@@ -462,7 +481,7 @@ namespace Aegix::GLTF
 
 		Material::NormalTextureInfo normal{};
 
-		REQUIRE(tryRead(*normalIt, "index", normal.index), 
+		REQUIRE(tryRead(*normalIt, "index", normal.index),
 			"Normal texture index is required");
 		tryRead(*normalIt, "texCoord", normal.texCoord);
 		tryRead(*normalIt, "scale", normal.scale);
@@ -479,7 +498,7 @@ namespace Aegix::GLTF
 
 		Material::OcclusionTextureInfo occlusion{};
 
-		REQUIRE(tryRead(*occlusionIt, "index", occlusion.index), 
+		REQUIRE(tryRead(*occlusionIt, "index", occlusion.index),
 			"Occlusion texture index is required");
 		tryRead(*occlusionIt, "texCoord", occlusion.texCoord);
 		tryRead(*occlusionIt, "strength", occlusion.strength);
@@ -496,7 +515,7 @@ namespace Aegix::GLTF
 
 		Material::TextureInfo emissive{};
 
-		REQUIRE(tryRead(*emissiveIt, "index", emissive.index), 
+		REQUIRE(tryRead(*emissiveIt, "index", emissive.index),
 			"Emissive texture index is required");
 		tryRead(*emissiveIt, "texCoord", emissive.texCoord);
 
@@ -605,6 +624,21 @@ namespace Aegix::GLTF
 		return true;
 	}
 
+	static bool loadBuffers(std::vector<Buffer>& buffers, const std::filesystem::path& basePath)
+	{
+		for (auto& buffer : buffers)
+		{
+			if (!buffer.uri.has_value())
+				continue;
+
+			buffer.data = loadbuffer(basePath, buffer.uri.value());
+			if (buffer.data.empty())
+				return false;
+		}
+
+		return true;
+	}
+
 	static std::optional<GLTF> parseGLTF(const std::filesystem::path& path)
 	{
 		std::ifstream file(path, std::ios::in);
@@ -626,7 +660,9 @@ namespace Aegix::GLTF
 			!readMaterials(gltf.materials, jsonData) ||
 			!readTextures(gltf.textures, jsonData) ||
 			!readImages(gltf.images, jsonData) ||
-			!readSamplers(gltf.samplers, jsonData))
+			!readSamplers(gltf.samplers, jsonData) || 
+			!loadBuffers(gltf.buffers, path.parent_path())
+			)
 		{
 			return std::nullopt;
 		}

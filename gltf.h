@@ -144,6 +144,7 @@ namespace Aegix::GLTF
 		size_t byteLength;	// Required
 		std::optional<std::string> uri; // Empty for glb
 		std::optional<std::string> name;
+		std::vector<uint8_t> data;
 	};
 
 	struct Material
