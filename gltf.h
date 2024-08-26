@@ -109,7 +109,7 @@ namespace Aegix::GLTF
 			Mat4
 		};
 
-		size_t bufferView = 0;
+		size_t bufferView = 0;		 // If undefined, accessor must be initialized with zeros but sparse could override this
 		size_t byteOffset = 0;
 		size_t count;				 // Required
 		ComponentType componentType; // Required
@@ -277,55 +277,4 @@ namespace Aegix::GLTF
 	/// @param path Path to the .gltf file
 	/// @return The parsed GLTF file, or std::nullopt if an error occurred
 	std::optional<GLTF> load(const std::filesystem::path& path);
-
-
-	/// @brief Converts a vector of bytes to a vector of the specified type
-	/// @tparam From Type as which the data in the byte vector should be interpreted
-	/// @tparam To Type to which the data should be converted
-	/// @param byteData Byte data to convert
-	/// @return A vector of the converted data
-	template<typename To, typename From>
-	std::vector<To> convertTo(uint8_t* byteData, size_t elementCount)
-	{
-		std::vector<To> output{};
-		output.reserve(elementCount);
-
-		auto fromPtr = reinterpret_cast<const From*>(byteData);
-		for (size_t i = 0; i < elementCount; ++i)
-		{
-			output.push_back(static_cast<To>(fromPtr[i]));
-		}
-
-		return output;
-	}
-
-	/// @brief Converts a vector of bytes to a vector of the specified type
-	/// @tparam T New type to convert the data to
-	/// @param byteData Byte data to convert
-	/// @param type Enum value specifying the component type of the data
-	/// @return A vector of the converted data
-	template<typename T>
-	std::vector<T> convertTo(Accessor::ComponentType type, uint8_t* byteData, size_t elementCount)
-	{
-		std::vector<T> output;
-		output.reserve(elementCount);
-
-		switch (type)
-		{
-		case Accessor::ComponentType::Byte:
-			return convertTo<T, int8_t>(byteData, elementCount);
-		case Accessor::ComponentType::UnsignedByte:
-			return convertTo<T, uint8_t>(byteData, elementCount);
-		case Accessor::ComponentType::Short:
-			return convertTo<T, int16_t>(byteData, elementCount);
-		case Accessor::ComponentType::UnsignedShort:
-			return convertTo<T, uint16_t>(byteData, elementCount);
-		case Accessor::ComponentType::UnsignedInt:
-			return convertTo<T, uint32_t>(byteData, elementCount);
-		case Accessor::ComponentType::Float:
-			return convertTo<T, float>(byteData, elementCount);
-		default:
-			return {};
-		}
-	}
 }
