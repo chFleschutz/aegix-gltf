@@ -109,7 +109,7 @@ namespace Aegix::GLTF
 			Mat4
 		};
 
-		std::optional<size_t> bufferView; // Spec: If undefined, accessor must be initialized with zeros
+		size_t bufferView = 0;
 		size_t byteOffset = 0;
 		size_t count;				 // Required
 		ComponentType componentType; // Required

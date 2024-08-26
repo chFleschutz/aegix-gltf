@@ -383,7 +383,7 @@ namespace Aegix::GLTF
 			REQUIRE((tryReadParse<std::string, Accessor::Type>(jsonAccessor, "type", gltfAccessor.type, parseAccessorType)),
 				"Accessor type is required");
 
-			tryReadOptional<size_t>(jsonAccessor, "bufferView", gltfAccessor.bufferView);
+			tryRead<size_t>(jsonAccessor, "bufferView", gltfAccessor.bufferView);
 			tryRead(jsonAccessor, "byteOffset", gltfAccessor.byteOffset);
 			tryRead(jsonAccessor, "normalized", gltfAccessor.normalized);
 			tryReadVector<float>(jsonAccessor, "min", gltfAccessor.min);
