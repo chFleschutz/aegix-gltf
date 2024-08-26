@@ -3,57 +3,84 @@
 #include "gltf.h"
 
 #include <vector>
+#include <cassert>
 
 namespace Aegix::GLTF
 {
-	template<typename To, typename From>
-	static std::vector<To> convertToType(const uint8_t* byteData, size_t elementCount)
+	/// @brief Reinterpret the binary sourceData as T and copy it to the destination vector
+	/// @tparam T Type to reinterpret the binary sourceData as
+	/// @tparam U Type of the destination vector
+	/// @param destination Vector to copy the data to
+	/// @param sourceData Pointer to the binary data to reinterpret
+	/// @param elementCount Number of elements to copy (not bytes)
+	template<typename T, typename U>
+	static void copyDataReinterpretedAsType(std::vector<U>& destination, const uint8_t* sourceData, size_t elementCount)
 	{
-		std::vector<To> output{};
-		output.reserve(elementCount);
+		destination.reserve(elementCount);
 
-		auto fromPtr = reinterpret_cast<const From*>(byteData);
+		auto sourcePtr = reinterpret_cast<const T*>(sourceData);
 		for (size_t i = 0; i < elementCount; ++i)
 		{
-			output.push_back(static_cast<To>(fromPtr[i]));
+			destination.emplace_back(static_cast<U>(sourcePtr[i]));
 		}
-
-		return output;
 	}
 
+	/// @brief Reinterpret the binary data as type and copy it to the destination vector
+	/// @tparam T Type of the destination vector
+	/// @param type Type to reinterpret the binary data as
+	/// @param destination Vector to copy the data to
+	/// @param data Pointer to the binary data 
+	/// @param elementCount Number of elements to copy (not bytes)
 	template<typename T>
-	static std::vector<T> convertTo(Accessor::ComponentType type, const uint8_t* byteData, size_t elementCount)
+	static void copyDataReinterpretedAs(Accessor::ComponentType type, std::vector<T>& destination, const uint8_t* data, size_t elementCount)
 	{
 		switch (type)
 		{
 		case Accessor::ComponentType::Byte:
-			return convertToType<T, int8_t>(byteData, elementCount);
+			copyDataReinterpretedAsType<int8_t>(destination, data, elementCount);
+			return;
 		case Accessor::ComponentType::UnsignedByte:
-			return convertToType<T, uint8_t>(byteData, elementCount);
+			copyDataReinterpretedAsType<uint8_t>(destination, data, elementCount);
+			return;
 		case Accessor::ComponentType::Short:
-			return convertToType<T, int16_t>(byteData, elementCount);
+			copyDataReinterpretedAsType<int16_t>(destination, data, elementCount);
+			return;
 		case Accessor::ComponentType::UnsignedShort:
-			return convertToType<T, uint16_t>(byteData, elementCount);
+			copyDataReinterpretedAsType<uint16_t>(destination, data, elementCount);
+			return;
 		case Accessor::ComponentType::UnsignedInt:
-			return convertToType<T, uint32_t>(byteData, elementCount);
+			copyDataReinterpretedAsType<uint32_t>(destination, data, elementCount);
+			return;
 		case Accessor::ComponentType::Float:
-			return convertToType<T, float>(byteData, elementCount);
+			copyDataReinterpretedAsType<float>(destination, data, elementCount);
+			return;
 		default:
-			return {};
+			assert(false && "Invalid component type");
+			return;
 		}
 	}
 
+	/// @brief Copy data to the destination vector from the buffer accessor reinterpreting it as the ComponentType of the accessor
+	/// @tparam T Type of the destination vector
+	/// @param destination Vector to copy the data to
+	/// @param accessorIndex Index of the buffer accessor to copy the data from
+	/// @param gltf GLTF data
 	template<typename T>
-	static std::vector<T> queryDataAs(size_t accessorIndex, const GLTF& gltf)
+	static void copyDataReinterpreted(std::vector<T>& destination, size_t accessorIndex, const GLTF& gltf)
 	{
 		auto& accessor = gltf.accessors[accessorIndex];
 		auto& bufferView = gltf.bufferViews[accessor.bufferView];
 		auto& buffer = gltf.buffers[bufferView.buffer];
 
 		auto data = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
-		return convertTo<T>(accessor.componentType, data, accessor.count);
+		copyDataReinterpretedAs(accessor.componentType, destination, data, accessor.count);
 	}
 
+	/// @brief Copy data to the destination vector from the buffer accessor
+	/// @tparam T Type of the destination vector
+	/// @param destination Vector to copy the data to
+	/// @param accessorIndex Index of the buffer accessor to copy the data from
+	/// @note The data is copied as is, no reinterpretation is done
 	template<typename T>
 	static void copyData(std::vector<T>& destination, size_t accessorIndex, const GLTF& gltf)
 	{
@@ -64,5 +91,34 @@ namespace Aegix::GLTF
 		destination.resize(accessor.count);
 		auto dataPtr = buffer.data.data() + bufferView.byteOffset + accessor.byteOffset;
 		std::memcpy(destination.data(), dataPtr, accessor.count * sizeof(T));
+	}
+
+	/// @brief Copy the indices of the primitive to the destination vector if they exist
+	/// @tparam T Type of the destination vector / indices
+	/// @param destination Vector to copy the indices to
+	/// @param primitive Primitive to copy the indices from
+	template<typename T>
+	static void copyIndices(std::vector<T>& destination, const Mesh::Primitive& primitive, const GLTF& gltf)
+	{
+		if (primitive.indices.has_value())
+		{
+			copyDataReinterpreted(destination, primitive.indices.value(), gltf);
+		}
+	}
+
+	/// @brief Copy the attribute with the given name to the destination vector if it exists
+	/// @tparam T Type of the destination vector
+	/// @param attributeName Name of the attribute to copy
+	/// @param destination Vector to copy the attribute to
+	/// @param primitive Primitive to copy the attribute from
+	/// @note The data is copied as is, no reinterpretation is done
+	template<typename T>
+	static void copyAttribute(std::string_view attributeName, std::vector<T>& destination, const Mesh::Primitive& primitive, const GLTF& gltf)
+	{
+		auto attributeIt = primitive.attributes.find(attributeName.data());
+		if (attributeIt != primitive.attributes.end())
+		{
+			copyData(destination, attributeIt->second, gltf);
+		}
 	}
 }
