@@ -15,6 +15,72 @@
 
 namespace Aegix::GLTF
 {
+	namespace base64
+	{
+		static constexpr uint8_t INVALID_UINT8 = 255;
+
+		// + 1 for the null terminator
+		static constexpr std::array<uint8_t, 64 + 1> encodeTable{
+			"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+		};
+
+		static constexpr std::array<uint8_t, 256> decodeTable()
+		{
+			std::array<uint8_t, 256> table{};
+			table.fill(INVALID_UINT8);
+			for (size_t i = 0; i < 64; ++i)
+			{
+				table[encodeTable[i]] = i;
+			}
+			return table;
+		}
+
+		static std::vector<uint8_t> decode(std::string_view input)
+		{
+			constexpr auto table = decodeTable();
+
+			std::vector<uint8_t> output{};
+			output.reserve(input.size() / 4 * 3);
+
+			uint32_t value = 0;	 // Stores actual bits
+			uint32_t count = -8; // Bits in value - 8
+			for (const unsigned char c : input)
+			{
+				if (table[c] == INVALID_UINT8) // Skip invalid characters
+					continue;
+
+				value = (value << 6) + table[c];
+				count += 6;
+
+				if (count >= 0)
+				{
+					output.push_back(static_cast<uint8_t>((value >> count) & 0xFF));
+					count -= 8;
+				}
+			}
+
+			return output;
+		}
+	}
+
+
+	static std::vector<uint8_t> loadUriData(const std::string_view& uri)
+	{
+		std::string_view marker = "base64,";
+		auto pos = uri.find(marker);
+		if (pos == std::string::npos)
+			return {};
+
+		auto data = uri.substr(pos + marker.size());
+		return base64::decode(data);
+	}
+
+	static std::vector<uint8_t> loadbuffer(const std::string& uri)
+	{
+		if (uri.substr(0, 5) == "data:")
+			return loadUriData(uri);
+	}
+
 	/// @brief Reads a value from a JSON object by key and stores it in outValue.
 	/// @tparam T Type of the value to read.
 	/// @return Returns false if the key was not found otherwise true.
