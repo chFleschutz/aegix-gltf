@@ -34,7 +34,7 @@ For more details about the GLTF format and its capabilities, refer to the [GLTF 
     git clone https://github.com/chFleschutz/aegix-gltf.git
     ```
 
-2. **Genterate Project Files**
+2. **Generate Project Files**
 
    Use CMake to generate the project files, or open the folder directly in your CMake-supported IDE (e.g., Visual Studio).
   
