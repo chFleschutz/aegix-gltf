@@ -6,12 +6,15 @@
 #include <fstream>
 #include <functional>
 
-
 // @brief Used to mark required fields in the GLTF file
 // @return If the condition is false, an assertion is triggered and the function returns false
 // @note The function must return a boolean value
-#define REQUIRE(condition, message) if (!(condition)) { assert(false && "Invalid GLTF file: " message); return false; }
-
+#define REQUIRE(condition, message)                     \
+	if (!(condition))                                   \
+	{                                                   \
+		assert(false && "Invalid GLTF file: " message); \
+		return false;                                   \
+	}
 
 namespace Aegix::GLTF
 {
@@ -441,7 +444,7 @@ namespace Aegix::GLTF
 	static bool readPBR(Material& material, const nlohmann::json& json)
 	{
 		auto pbrIt = json.find("pbrMetallicRoughness");
-		if (pbrIt == json.end())  // PBR is optional -> return no error
+		if (pbrIt == json.end()) // PBR is optional -> return no error
 			return true;
 
 		Material::PBRMetallicRoughness pbr{};
@@ -639,7 +642,31 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static std::optional<GLTF> parseGLTF(const std::filesystem::path& path)
+	static std::optional<GLTF> loadGLTF(nlohmann::json header, std::filesystem::path parentDir)
+	{
+		GLTF gltf{};
+
+		// Read GLTF header data
+		if (!readAsset(gltf.asset, header) ||
+			!readStartScene(gltf.startScene, header) ||
+			!readScenes(gltf.scenes, header) ||
+			!readNodes(gltf.nodes, header) ||
+			!readMeshes(gltf.meshes, header) ||
+			!readAccessors(gltf.accessors, header) ||
+			!readBufferViews(gltf.bufferViews, header) ||
+			!readBuffers(gltf.buffers, header) ||
+			!readMaterials(gltf.materials, header) ||
+			!readTextures(gltf.textures, header) ||
+			!readImages(gltf.images, header) ||
+			!readSamplers(gltf.samplers, header))
+		{
+			return std::nullopt;
+		}
+
+		return gltf;
+	}
+
+	static std::optional<GLTF> readFileGLTF(const std::filesystem::path& path)
 	{
 		std::ifstream file(path, std::ios::in);
 		if (!file.is_open())
@@ -648,43 +675,84 @@ namespace Aegix::GLTF
 		nlohmann::json jsonData = nlohmann::json::parse(file);
 		file.close();
 
-		GLTF gltf;
-		if (!readAsset(gltf.asset, jsonData) ||
-			!readStartScene(gltf.startScene, jsonData) ||
-			!readScenes(gltf.scenes, jsonData) ||
-			!readNodes(gltf.nodes, jsonData) ||
-			!readMeshes(gltf.meshes, jsonData) ||
-			!readAccessors(gltf.accessors, jsonData) ||
-			!readBufferViews(gltf.bufferViews, jsonData) ||
-			!readBuffers(gltf.buffers, jsonData) ||
-			!readMaterials(gltf.materials, jsonData) ||
-			!readTextures(gltf.textures, jsonData) ||
-			!readImages(gltf.images, jsonData) ||
-			!readSamplers(gltf.samplers, jsonData) || 
-			!loadBuffers(gltf.buffers, path.parent_path())
-			)
+		auto gltf = loadGLTF(jsonData, path.parent_path());
+
+		// Load buffers
+		for (auto& buffer : gltf->buffers)
 		{
-			return std::nullopt;
+			if (buffer.uri.has_value())
+				buffer.data = loadbuffer(path.parent_path(), buffer.uri.value());
 		}
 
 		return gltf;
 	}
 
-	static std::optional<GLTF> parseGLB(const std::filesystem::path& path)
+	static std::optional<GLTF> readFileGLB(const std::filesystem::path& path)
 	{
-		// TODO: Implement GLB parsing
-		return std::nullopt;
+		std::ifstream glbFile(path, std::ios::in | std::ios::binary);
+		if (!glbFile.is_open())
+			return std::nullopt;
+
+		// GLB Files are structured as follows:
+		// Header | Chunk 0 Json | Chunk 1 Binary
+
+		HeaderGLB header{};
+		glbFile.read(reinterpret_cast<char*>(&header), sizeof(HeaderGLB));
+		if (header.magic != GLB_MAGIC || header.version < GLB_VERSION)
+		{
+			assert(false && "Invalid GLB header, magic or version mismatch");
+			return std::nullopt;
+		}
+
+		ChunkGLB jsonChunk{};
+		glbFile.read(reinterpret_cast<char*>(&jsonChunk), sizeof(ChunkGLB));
+		if (jsonChunk.type != GLB_CHUNK_JSON)
+		{
+			assert(false && "Invalid GLB chunk, JSON chunk expected");
+			return std::nullopt;
+		}
+
+		std::vector<char> jsonChunkData(jsonChunk.length);
+		glbFile.read(jsonChunkData.data(), jsonChunk.length);
+
+		nlohmann::json json = nlohmann::json::parse(jsonChunkData);
+		auto gltf = loadGLTF(json, path.parent_path());
+
+		// Load buffers
+		for (auto& buffer : gltf->buffers)
+		{
+			if (!buffer.uri.has_value())
+			{
+				ChunkGLB binChunk{};
+				glbFile.read(reinterpret_cast<char*>(&binChunk), sizeof(ChunkGLB));
+				if (binChunk.type != GLB_CHUNK_BIN)
+				{
+					assert(false && "Invalid GLB chunk, BIN chunk expected");
+					return std::nullopt;
+				}
+
+				buffer.data.resize(binChunk.length);
+				glbFile.read(reinterpret_cast<char*>(buffer.data.data()), binChunk.length);
+			}
+			else
+			{
+				buffer.data = loadbuffer(path.parent_path(), buffer.uri.value());
+			}
+		}
+
+		glbFile.close();
+		return gltf;
 	}
 
 	std::optional<GLTF> load(const std::filesystem::path& path)
 	{
 		if (path.extension() == ".gltf")
-			return parseGLTF(path);
+			return readFileGLTF(path);
 
 		if (path.extension() == ".glb")
-			return parseGLB(path);
+			return readFileGLB(path);
 
-		// Unsupported file format
+		assert(false && "Unsupported file format");
 		return std::nullopt;
 	}
 }

@@ -24,6 +24,23 @@ namespace Aegix::GLTF
 	};
 
 
+	constexpr uint32_t GLB_MAGIC = 0x46546C67;		// ASCII: "glTF"
+	constexpr uint32_t GLB_VERSION = 2;
+	constexpr uint32_t GLB_CHUNK_JSON = 0x4E4F534A;	// ASCII: "JSON"
+	constexpr uint32_t GLB_CHUNK_BIN = 0x004E4942;	// ASCII: "BIN "
+
+	struct HeaderGLB
+	{
+		uint32_t magic = 0;		// Must be 0x46546C67 (ASCII for glTF)
+		uint32_t version = 0;
+		uint32_t length = 0;
+	};
+
+	struct ChunkGLB
+	{
+		uint32_t length = 0;
+		uint32_t type = 0;
+	};
 
 	struct Asset
 	{
