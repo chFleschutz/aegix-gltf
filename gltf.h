@@ -2,7 +2,6 @@
 
 #include <array>
 #include <filesystem>
-#include <map>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -148,8 +147,8 @@ namespace Aegix::GLTF
 			ElementArrayBuffer = 34963
 		};
 
-		size_t buffer;			// Required
-		size_t byteLength;		// Required
+		size_t buffer = 0;		// Required
+		size_t byteLength = 0;	// Required
 		size_t byteOffset = 0;
 		std::optional<size_t> byteStride;
 		std::optional<Target> target;

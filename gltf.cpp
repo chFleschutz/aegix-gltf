@@ -40,32 +40,35 @@ namespace Aegix::GLTF
 
 		static std::vector<uint8_t> decode(std::string_view input)
 		{
+			constexpr auto BITS_IN_B64 = 6;
+			constexpr auto BITS_IN_BYTE = 8;
+			constexpr auto MASK_BYTE = (1 << BITS_IN_BYTE) - 1;
 			constexpr auto table = decodeTable();
 
 			std::vector<uint8_t> output{};
 			output.reserve(input.size() / 4 * 3);
 
-			uint32_t value = 0;	 // Stores actual bits
-			uint32_t count = -8; // Bits in value - 8
+			uint32_t value = 0;	// Stores actual bits
+			uint32_t count = 0; // Used bits in value
 			for (const unsigned char c : input)
 			{
 				if (table[c] == INVALID_UINT8) // Skip invalid characters
 					continue;
 
-				value = (value << 6) + table[c];
-				count += 6;
+				value = (value << BITS_IN_B64) + table[c];
+				count += BITS_IN_B64;
 
-				if (count >= 0)
+				if (count >= BITS_IN_BYTE)
 				{
-					output.push_back(static_cast<uint8_t>((value >> count) & 0xFF));
-					count -= 8;
+					const auto shift = count - BITS_IN_BYTE;
+					output.push_back(static_cast<uint8_t>((value >> shift) & MASK_BYTE));
+					count -= BITS_IN_BYTE;
 				}
 			}
 
 			return output;
 		}
 	}
-
 
 	static std::vector<uint8_t> loadUriData(std::string_view uri)
 	{
@@ -81,7 +84,7 @@ namespace Aegix::GLTF
 		return base64::decode(data);
 	}
 
-	static std::vector<uint8_t> loadbuffer(const std::filesystem::path& basePath, const std::string& uri)
+	static std::vector<uint8_t> loadBuffer(const std::filesystem::path& basePath, const std::string& uri)
 	{
 		if (uri.substr(0, 5) == "data:")
 			return loadUriData(uri);
@@ -537,7 +540,7 @@ namespace Aegix::GLTF
 		{
 			auto& material = materials.emplace_back();
 
-			REQUIRE(readPBR(material, jsonMaterial), "PBR metallict roughness is required");
+			REQUIRE(readPBR(material, jsonMaterial), "PBR metallic roughness is required");
 			REQUIRE(readNormal(material, jsonMaterial), "Normal texture info is required");
 			REQUIRE(readOcclusion(material, jsonMaterial), "Occlusion texture info is required");
 			REQUIRE(readEmissive(material, jsonMaterial), "Emissive texture info");
@@ -627,22 +630,7 @@ namespace Aegix::GLTF
 		return true;
 	}
 
-	static bool loadBuffers(std::vector<Buffer>& buffers, const std::filesystem::path& basePath)
-	{
-		for (auto& buffer : buffers)
-		{
-			if (!buffer.uri.has_value())
-				continue;
-
-			buffer.data = loadbuffer(basePath, buffer.uri.value());
-			if (buffer.data.empty())
-				return false;
-		}
-
-		return true;
-	}
-
-	static std::optional<GLTF> loadGLTF(nlohmann::json header, std::filesystem::path parentDir)
+	static std::optional<GLTF> loadGLTF(const nlohmann::json& header, const std::filesystem::path& parentDir)
 	{
 		GLTF gltf{};
 
@@ -681,7 +669,7 @@ namespace Aegix::GLTF
 		for (auto& buffer : gltf->buffers)
 		{
 			if (buffer.uri.has_value())
-				buffer.data = loadbuffer(path.parent_path(), buffer.uri.value());
+				buffer.data = loadBuffer(path.parent_path(), buffer.uri.value());
 		}
 
 		return gltf;
@@ -736,7 +724,7 @@ namespace Aegix::GLTF
 			}
 			else
 			{
-				buffer.data = loadbuffer(path.parent_path(), buffer.uri.value());
+				buffer.data = loadBuffer(path.parent_path(), buffer.uri.value());
 			}
 		}
 
