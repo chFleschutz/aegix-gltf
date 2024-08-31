@@ -6,7 +6,7 @@
 </div>
 <br>
 
-Aegix GLTF is a compact library for loading and parsing GLTF 2.0 files in C++. It focuses on direct data mapping, translating all elements of a GLTF file into C++ structs that mirror the GLTF specification. The library utilizes the [nlohmann/json](https://github.com/nlohmann/json) library for efficient JSON parsing.
+Aegix GLTF is a compact library for loading and parsing GLTF 2.0 files in C++. It focuses on direct data mapping, translating all elements of a GLTF file into C++ structs that mirror the GLTF specification. The library uses the [nlohmann/json](https://github.com/nlohmann/json) library for JSON parsing.
 
 For more details about the GLTF format and its capabilities, refer to the [GLTF 2.0 Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html).
 
